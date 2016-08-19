@@ -28,21 +28,6 @@ const (
 	typePostman = "postman"
 )
 
-// Help text template
-const helpTemplate = `NAME:
-   {{.Name}} - {{.Usage}}
-
-USAGE:
-   {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .VisibleFlags}}[options] {{end}}filename|url{{end}}
-   {{if .Version}}{{if not .HideVersion}}
-VERSION:
-   {{.Version}}
-   {{end}}{{end}}{{if .VisibleFlags}}
-OPTIONS:
-   {{range .VisibleFlags}}{{.}}
-   {{end}}{{end}}
-`
-
 var mVUs = stats.Stat{Name: "vus", Type: stats.GaugeType}
 
 func pollVURamping(ctx context.Context, t lib.Test) <-chan int {
@@ -205,7 +190,7 @@ func makeRunner(t lib.Test, filename, typ string) (lib.Runner, error) {
 	}
 }
 
-func action(cc *cli.Context) error {
+func actionRun(cc *cli.Context) error {
 	once := cc.Bool("once")
 
 	if cc.IsSet("verbose") {
@@ -448,81 +433,82 @@ func main() {
 	// Free up -v and -h for our own flags
 	cli.VersionFlag.Name = "version"
 	cli.HelpFlag.Name = "help, ?"
-	cli.AppHelpTemplate = helpTemplate
 
 	// Bootstrap the app from commandline flags
 	app := cli.NewApp()
 	app.Name = "speedboat"
 	app.Usage = "A next-generation load generator"
 	app.Version = "0.0.1"
-	app.Flags = []cli.Flag{
-		cli.BoolFlag{
-			Name:  "plan",
-			Usage: "Don't run anything, just show the test plan",
-		},
-		cli.BoolFlag{
-			Name:  "once",
-			Usage: "Run only a single test iteration, with one VU",
-		},
-		cli.StringFlag{
-			Name:  "type, t",
-			Usage: "Input file type, if not evident (url, js or postman)",
-		},
-		cli.StringSliceFlag{
-			Name:  "vus, u",
-			Usage: "Number of VUs to simulate",
-		},
-		cli.DurationFlag{
-			Name:  "duration, d",
-			Usage: "Test duration",
-			Value: time.Duration(10) * time.Second,
-		},
-		cli.BoolFlag{
-			Name:  "verbose, v",
-			Usage: "More verbose output",
-		},
-		cli.BoolFlag{
-			Name:  "quiet, q",
-			Usage: "Suppress the summary at the end of a test",
-		},
-		cli.StringFlag{
-			Name:  "format, f",
-			Usage: "Format for printed metrics (yaml, json, prettyjson)",
-			Value: "yaml",
-		},
-		cli.DurationFlag{
-			Name:  "interval, i",
-			Usage: "Write periodic summaries",
-		},
-		cli.StringSliceFlag{
-			Name:  "out, o",
-			Usage: "Write metrics to a database",
-		},
-		cli.BoolFlag{
-			Name:  "raw",
-			Usage: "Instead of summaries, dump raw samples to stdout",
-		},
-		cli.StringSliceFlag{
-			Name:  "select, s",
-			Usage: "Include only named metrics",
-		},
-		cli.StringSliceFlag{
-			Name:  "exclude, e",
-			Usage: "Exclude named metrics",
-		},
-		cli.StringSliceFlag{
-			Name:  "group-by, g",
-			Usage: "Group metrics by tags",
-		},
-		cli.StringSliceFlag{
-			Name:  "tag",
-			Usage: "Additional metric tags",
+	app.Commands = []cli.Command{
+		cli.Command{
+			Name:    "run",
+			Aliases: []string{"r"},
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "once",
+					Usage: "Run only a single test iteration, with one VU",
+				},
+				cli.StringFlag{
+					Name:  "type, t",
+					Usage: "Input file type, if not evident (url, js or postman)",
+				},
+				cli.StringSliceFlag{
+					Name:  "vus, u",
+					Usage: "Number of VUs to simulate",
+				},
+				cli.DurationFlag{
+					Name:  "duration, d",
+					Usage: "Test duration",
+					Value: time.Duration(10) * time.Second,
+				},
+				cli.BoolFlag{
+					Name:  "verbose, v",
+					Usage: "More verbose output",
+				},
+				cli.BoolFlag{
+					Name:  "quiet, q",
+					Usage: "Suppress the summary at the end of a test",
+				},
+				cli.StringFlag{
+					Name:  "format, f",
+					Usage: "Format for printed metrics (yaml, json, prettyjson)",
+					Value: "yaml",
+				},
+				cli.DurationFlag{
+					Name:  "interval, i",
+					Usage: "Write periodic summaries",
+				},
+				cli.StringSliceFlag{
+					Name:  "out, o",
+					Usage: "Write metrics to a database",
+				},
+				cli.BoolFlag{
+					Name:  "raw",
+					Usage: "Instead of summaries, dump raw samples to stdout",
+				},
+				cli.StringSliceFlag{
+					Name:  "select, s",
+					Usage: "Include only named metrics",
+				},
+				cli.StringSliceFlag{
+					Name:  "exclude, e",
+					Usage: "Exclude named metrics",
+				},
+				cli.StringSliceFlag{
+					Name:  "group-by, g",
+					Usage: "Group metrics by tags",
+				},
+				cli.StringSliceFlag{
+					Name:  "tag",
+					Usage: "Additional metric tags",
+				},
+			},
+			Action: actionRun,
 		},
 	}
 	app.Before = func(cc *cli.Context) error {
 		invocation.PopulateWithContext(cc)
 		return nil
 	}
-	app.Action = action
 	invocationError <- app.Run(os.Args)
 }
