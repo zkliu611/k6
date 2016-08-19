@@ -35,9 +35,13 @@ var cmdRun = cli.Command{
 			Usage: "Test duration",
 			Value: time.Duration(10) * time.Second,
 		},
+		cli.DurationFlag{
+			Name:  "interval, i",
+			Usage: "Periodically print metrics; 0 to disable",
+		},
 		cli.BoolFlag{
 			Name:  "quiet, q",
-			Usage: "Suppress the summary at the end of a test",
+			Usage: "Don't print metrics at the end of the test",
 		},
 	},
 	Action: actionRun,

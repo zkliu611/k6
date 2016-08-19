@@ -214,10 +214,6 @@ func main() {
 			Usage: "Format for printed metrics (yaml, json, prettyjson)",
 			Value: "yaml",
 		},
-		cli.DurationFlag{
-			Name:  "interval, i",
-			Usage: "Write periodic summaries",
-		},
 		cli.StringSliceFlag{
 			Name:  "out, o",
 			Usage: "Write metrics to a database",
