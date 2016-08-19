@@ -209,10 +209,47 @@ func main() {
 			Name:  "verbose, v",
 			Usage: "More verbose output",
 		},
+		cli.StringFlag{
+			Name:  "format, f",
+			Usage: "Format for printed metrics (yaml, json, prettyjson)",
+			Value: "yaml",
+		},
+		cli.DurationFlag{
+			Name:  "interval, i",
+			Usage: "Write periodic summaries",
+		},
+		cli.StringSliceFlag{
+			Name:  "out, o",
+			Usage: "Write metrics to a database",
+		},
+		cli.BoolFlag{
+			Name:  "raw",
+			Usage: "Instead of summaries, dump raw samples to stdout",
+		},
+		cli.StringSliceFlag{
+			Name:  "select, s",
+			Usage: "Include only named metrics",
+		},
+		cli.StringSliceFlag{
+			Name:  "exclude, e",
+			Usage: "Exclude named metrics",
+		},
+		cli.StringSliceFlag{
+			Name:  "group-by, g",
+			Usage: "Group metrics by tags",
+		},
+		cli.StringSliceFlag{
+			Name:  "tag",
+			Usage: "Additional metric tags",
+		},
 	}
 	app.Before = func(cc *cli.Context) error {
-		setupLogging(cc)
 		invocation.PopulateWithContext(cc)
+
+		setupLogging(cc)
+		if err := setupStats(cc); err != nil {
+			return cli.NewExitError(err.Error(), 1)
+		}
 		return nil
 	}
 	invocationError <- app.Run(os.Args)

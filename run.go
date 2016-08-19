@@ -4,8 +4,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/loadimpact/speedboat/lib"
 	"github.com/loadimpact/speedboat/stats"
-	"github.com/loadimpact/speedboat/stats/accumulate"
-	"github.com/loadimpact/speedboat/stats/writer"
 	"github.com/urfave/cli"
 	"golang.org/x/net/context"
 	"gopkg.in/yaml.v2"
@@ -41,39 +39,6 @@ var cmdRun = cli.Command{
 			Name:  "quiet, q",
 			Usage: "Suppress the summary at the end of a test",
 		},
-		cli.StringFlag{
-			Name:  "format, f",
-			Usage: "Format for printed metrics (yaml, json, prettyjson)",
-			Value: "yaml",
-		},
-		cli.DurationFlag{
-			Name:  "interval, i",
-			Usage: "Write periodic summaries",
-		},
-		cli.StringSliceFlag{
-			Name:  "out, o",
-			Usage: "Write metrics to a database",
-		},
-		cli.BoolFlag{
-			Name:  "raw",
-			Usage: "Instead of summaries, dump raw samples to stdout",
-		},
-		cli.StringSliceFlag{
-			Name:  "select, s",
-			Usage: "Include only named metrics",
-		},
-		cli.StringSliceFlag{
-			Name:  "exclude, e",
-			Usage: "Exclude named metrics",
-		},
-		cli.StringSliceFlag{
-			Name:  "group-by, g",
-			Usage: "Group metrics by tags",
-		},
-		cli.StringSliceFlag{
-			Name:  "tag",
-			Usage: "Additional metric tags",
-		},
 	},
 	Action: actionRun,
 }
@@ -101,52 +66,6 @@ func pollVURamping(ctx context.Context, t lib.Test) <-chan int {
 
 func actionRun(cc *cli.Context) error {
 	once := cc.Bool("once")
-
-	for _, out := range cc.StringSlice("out") {
-		backend, err := parseBackend(out)
-		if err != nil {
-			return cli.NewExitError(err.Error(), 1)
-		}
-		stats.DefaultRegistry.Backends = append(stats.DefaultRegistry.Backends, backend)
-	}
-
-	var formatter writer.Formatter
-	switch cc.String("format") {
-	case "":
-	case "json":
-		formatter = writer.JSONFormatter{}
-	case "prettyjson":
-		formatter = writer.PrettyJSONFormatter{}
-	case "yaml":
-		formatter = writer.YAMLFormatter{}
-	default:
-		return cli.NewExitError("Unknown output format", 1)
-	}
-
-	stats.DefaultRegistry.ExtraTags = parseTags(cc.StringSlice("tag"))
-
-	var summarizer *Summarizer
-	if formatter != nil {
-		filter := stats.MakeFilter(cc.StringSlice("exclude"), cc.StringSlice("select"))
-		if cc.Bool("raw") {
-			backend := &writer.Backend{
-				Writer:    os.Stdout,
-				Formatter: formatter,
-			}
-			backend.Filter = filter
-			stats.DefaultRegistry.Backends = append(stats.DefaultRegistry.Backends, backend)
-		} else {
-			accumulator := accumulate.New()
-			accumulator.Filter = filter
-			accumulator.GroupBy = cc.StringSlice("group-by")
-			stats.DefaultRegistry.Backends = append(stats.DefaultRegistry.Backends, accumulator)
-
-			summarizer = &Summarizer{
-				Accumulator: accumulator,
-				Formatter:   formatter,
-			}
-		}
-	}
 
 	stages, err := parseStages(cc.StringSlice("vus"), cc.Duration("duration"))
 	if err != nil {
