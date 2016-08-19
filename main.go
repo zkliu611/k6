@@ -211,10 +211,7 @@ func main() {
 		},
 	}
 	app.Before = func(cc *cli.Context) error {
-		if cc.GlobalBool("verbose") {
-			log.SetLevel(log.DebugLevel)
-		}
-
+		setupLogging(cc)
 		invocation.PopulateWithContext(cc)
 		return nil
 	}
