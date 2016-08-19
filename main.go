@@ -193,10 +193,6 @@ func makeRunner(t lib.Test, filename, typ string) (lib.Runner, error) {
 func actionRun(cc *cli.Context) error {
 	once := cc.Bool("once")
 
-	if cc.IsSet("verbose") {
-		log.SetLevel(log.DebugLevel)
-	}
-
 	for _, out := range cc.StringSlice("out") {
 		backend, err := parseBackend(out)
 		if err != nil {
@@ -462,10 +458,6 @@ func main() {
 					Value: time.Duration(10) * time.Second,
 				},
 				cli.BoolFlag{
-					Name:  "verbose, v",
-					Usage: "More verbose output",
-				},
-				cli.BoolFlag{
 					Name:  "quiet, q",
 					Usage: "Suppress the summary at the end of a test",
 				},
@@ -506,7 +498,17 @@ func main() {
 			Action: actionRun,
 		},
 	}
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:  "verbose, v",
+			Usage: "More verbose output",
+		},
+	}
 	app.Before = func(cc *cli.Context) error {
+		if cc.GlobalBool("verbose") {
+			log.SetLevel(log.DebugLevel)
+		}
+
 		invocation.PopulateWithContext(cc)
 		return nil
 	}
