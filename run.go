@@ -15,8 +15,10 @@ import (
 )
 
 var cmdRun = cli.Command{
-	Name:    "run",
-	Aliases: []string{"r"},
+	Name:      "run",
+	Aliases:   []string{"r"},
+	Usage:     "Runs a load test",
+	ArgsUsage: "filename|url",
 	Flags: []cli.Flag{
 		cli.BoolFlag{
 			Name:  "once",
