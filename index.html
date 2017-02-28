@@ -11,6 +11,19 @@
     <![endif]-->
     <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
     <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+
+    <style>
+    .flex {
+        /* flexbox setup */
+        display: flex;
+        flex-direction: row;
+    }
+
+    .flex > p {
+        align-items: baseline;
+    }
+    </style>
+
 </head>
 
 <body>
@@ -18,8 +31,8 @@
 <div id="main">
 
     <!-- <h1 class="page-title"></h1> -->
-    <section>
-      <p><h3 class="page-title" style="align-items: baseline"><img src="logo.png" alt=""> - A modern load testing tool, using Go and JavaScript</h3></p>
+    <section clas="flex">
+      <p><h3 class="page-title" style="align-items: baseline;"><img src="logo.png" alt=""> - A modern load testing tool, using Go and JavaScript</h3></p>
     </section>
     <section>
       <p><a href="https://github.com/loadimpact/k6">k6 GitHub Repository</a></p>
