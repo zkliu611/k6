@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><p><img src="logo.png" alt=""></p>
+<p><strong>k6</strong> is a modern load testing tool, building on <a href="https://loadimpact.com/">Load Impact</a>'s years of experience. It provides a clean, approachable scripting API, distributed and cloud execution, and orchestration via a REST API.</p>
+<p>This is how load testing should look in the 21st century.</p>
+<p><a href="https://asciinema.org/a/cbohbo6pbkxjwo1k8x0gkl7py"><img src="demo.gif" alt=""></a></p>
+<h2>Installation</h2><h3>Mac</h3><pre class="prettyprint source lang-bash"><code>brew tap loadimpact/k6
+brew install k6</code></pre><h3>Docker</h3><pre class="prettyprint source lang-bash"><code>docker pull loadimpact/k6</code></pre><h3>Other Platforms</h3><p>Grab a prebuilt binary from <a href="https://github.com/loadimpact/k6/releases">the Releases page</a>.</p>
+<h2>Introduction</h2><p>k6 works with the concept of <strong>virtual users</strong> (VUs), which run scripts - they're essentially glorified, parallel <code>while(true)</code> loops. Scripts are written using JavaScript, as ES6 modules, which allows you to break larger tests into smaller pieces, or make reusable pieces as you like.</p>
+<p>Scripts must contain, at the very least, a <code>default</code> function - this defines the entry point for your VUs, similar to the <code>main()</code> function in many other languages:</p>
+<pre class="prettyprint source lang-bash"><code>export default function() {
+    // do things here...
+}</code></pre><p><em>&quot;Why not just run my script normally, from top to bottom&quot;</em>, you might ask - the answer is: we do, but code <strong>inside</strong> and <strong>outside</strong> your <code>default</code> function can do different things.</p>
+<p>Code inside <code>default</code> is called &quot;VU code&quot;, and is run over and over for as long as the test is running. Code outside of it is called &quot;init code&quot;, and is run only once per VU.</p>
+<p>VU code can make HTTP requests, emit metrics, and generally do everything you'd expect a load test to do - with a few important exceptions: you can't load anything from your local filesystem, or import any other modules. This all has to be done from init code.</p>
+<p>There are two reasons for this. The first is, of course: performance.</p>
+<p>If you read a file from disk on every single script iteration, it'd be needlessly slow; even if you cache the contents of the file and any imported modules, it'd mean the <em>first run</em> of the script would be much slower than all the others. Worse yet, if you have a script that imports or loads things based on things that can only be known at runtime, you'd get slow iterations thrown in every time you load something new.</p>
+<p>But there's another, more interesting reason. By forcing all imports and file reads into the init context, we design for distributed execution. We know which files will be needed, so we distribute only those files. We know which modules will be imported, so we can bundle them up from the get-go. And, tying into the performance point above, the other nodes don't even need writable filesystems - everything can be kept in-memory.</p>
+<p>As an added bonus, you can use this to reuse data between iterations (but only for the same VU):</p>
+<pre class="prettyprint source lang-js"><code>var counter = 0;
+
+export default function() {
+    counter++;
+}</code></pre><h2>Development Setup</h2><pre class="prettyprint source"><code>go get -u github.com/loadimpact/k6</code></pre><p>The only catch is, if you want the web UI available, it has to be built separately. Requires a working NodeJS installation.</p>
+<p>First, install the <code>ember-cli</code> and <code>bower</code> tools if you don't have them already:</p>
+<pre class="prettyprint source"><code>npm install -g ember-cli bower</code></pre><p>Then build the UI:</p>
+<pre class="prettyprint source"><code>cd $GOPATH/src/github.com/loadimpact/k6/web
+npm install && bower install
+ember build</code></pre></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-k6.html">k6</a></li><li><a href="module-k6_html.html">k6/html</a></li><li><a href="module-k6_http.html">k6/http</a></li></ul><h3>Classes</h3><ul><li><a href="module-k6_html.Selection.html">Selection</a></li><li><a href="module-k6_http.Response.html">Response</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-getting-started.html">Getting Started</a></li><li><a href="tutorial-metrics-management.html">k6 Metrics Management</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Feb 28 2017 12:45:46 GMT-0800 (PST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
