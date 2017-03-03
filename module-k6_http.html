@@ -4,6 +4,17 @@
     <meta charset="utf-8">
     <title>JSDoc: Module: k6/http</title>
 
+        <script>
+          (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+          ga('create', 'UA-6552004-12', 'auto');
+          ga('send', 'pageview');
+        </script>
+        <link rel="icon" href="logo.png">
+
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
     <!--[if lt IE 9]>
@@ -19,7 +30,7 @@
 
     <h1 class="page-title">Module: k6/http</h1>
 
-    
+
 
 
 
@@ -27,50 +38,50 @@
 <section>
 
 <header>
-    
-        
-    
+
+
+
 </header>
 
 <article>
     <div class="container-overview">
-    
-        
 
-        
-    
+
+
+
+
     </div>
 
-    
 
-    
 
-    
+
+
+
         <h3 class="subsection-title">Classes</h3>
 
         <dl>
             <dt><a href="module-k6_http.Response.html">Response</a></dt>
             <dd></dd>
         </dl>
-    
 
-     
 
-    
 
-    
 
-    
+
+
+
+
+
         <h3 class="subsection-title">Methods</h3>
 
-        
-            
 
-    
+
+
+
 
     <h4 class="name" id=".batch"><span class="type-signature">(static) </span>batch<span class="signature">(requests)</span><span class="type-signature"> &rarr; {Array.&lt;<a href="module-k6_http.Response.html">module:k6/http.Response</a>>|Object}</span></h4>
 
-    
+
 
 
 
@@ -87,53 +98,53 @@
 
 
     <h5>Parameters:</h5>
-    
+
 
 <table class="params">
     <thead>
     <tr>
-        
+
         <th>Name</th>
-        
+
 
         <th>Type</th>
 
-        
 
-        
+
+
 
         <th class="last">Description</th>
     </tr>
     </thead>
 
     <tbody>
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>requests</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">Array</span>
 |
 
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>An array or object of requests, in string or object form.</p></td>
         </tr>
 
-    
+
     </tbody>
 </table>
 
@@ -144,49 +155,49 @@
 
 <dl class="details">
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="k6_http.js.html">k6/http.js</a>, <a href="k6_http.js.html#line166">line 166</a>
     </li></ul></dd>
-    
 
-    
 
-    
+
+
+
     <dt class="tag-see">See:</dt>
     <dd class="tag-see">
         <ul>
             <li><a href="module-k6_http.html#.request">module:k6/http.request</a></li>
         </ul>
     </dd>
-    
 
-    
+
+
 </dl>
 
 
@@ -203,7 +214,7 @@
 
 <h5>Returns:</h5>
 
-        
+
 
 
 <dl>
@@ -211,7 +222,7 @@
         Type
     </dt>
     <dd>
-        
+
 <span class="param-type">Array.&lt;<a href="module-k6_http.Response.html">module:k6/http.Response</a>></span>
 |
 
@@ -221,18 +232,18 @@
     </dd>
 </dl>
 
-    
 
 
 
-        
-            
 
-    
+
+
+
+
 
     <h4 class="name" id=".connect"><span class="type-signature">(static) </span>connect<span class="signature">(url, body, params)</span><span class="type-signature"> &rarr; {<a href="module-k6_http.Response.html">module:k6/http.Response</a>}</span></h4>
 
-    
+
 
 
 
@@ -249,99 +260,99 @@
 
 
     <h5>Parameters:</h5>
-    
+
 
 <table class="params">
     <thead>
     <tr>
-        
+
         <th>Name</th>
-        
+
 
         <th>Type</th>
 
-        
 
-        
+
+
 
         <th class="last">Description</th>
     </tr>
     </thead>
 
     <tbody>
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>url</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request URL (eg. &quot;http://example.com/&quot;)</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>body</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 |
 
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request body; objects will be query encoded.</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>params</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Additional parameters.</p></td>
         </tr>
 
-    
+
     </tbody>
 </table>
 
@@ -352,49 +363,49 @@
 
 <dl class="details">
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="k6_http.js.html">k6/http.js</a>, <a href="k6_http.js.html#line132">line 132</a>
     </li></ul></dd>
-    
 
-    
 
-    
+
+
+
     <dt class="tag-see">See:</dt>
     <dd class="tag-see">
         <ul>
             <li><a href="module-k6_http.html#.request">module:k6/http.request</a></li>
         </ul>
     </dd>
-    
 
-    
+
+
 </dl>
 
 
@@ -411,7 +422,7 @@
 
 <h5>Returns:</h5>
 
-        
+
 
 
 <dl>
@@ -419,25 +430,25 @@
         Type
     </dt>
     <dd>
-        
+
 <span class="param-type"><a href="module-k6_http.Response.html">module:k6/http.Response</a></span>
 
 
     </dd>
 </dl>
 
-    
 
 
 
-        
-            
 
-    
+
+
+
+
 
     <h4 class="name" id=".del"><span class="type-signature">(static) </span>del<span class="signature">(url, body, params)</span><span class="type-signature"> &rarr; {<a href="module-k6_http.Response.html">module:k6/http.Response</a>}</span></h4>
 
-    
+
 
 
 
@@ -454,99 +465,99 @@
 
 
     <h5>Parameters:</h5>
-    
+
 
 <table class="params">
     <thead>
     <tr>
-        
+
         <th>Name</th>
-        
+
 
         <th>Type</th>
 
-        
 
-        
+
+
 
         <th class="last">Description</th>
     </tr>
     </thead>
 
     <tbody>
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>url</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request URL (eg. &quot;http://example.com/&quot;)</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>body</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 |
 
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request body; objects will be query encoded.</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>params</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Additional parameters.</p></td>
         </tr>
 
-    
+
     </tbody>
 </table>
 
@@ -557,49 +568,49 @@
 
 <dl class="details">
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="k6_http.js.html">k6/http.js</a>, <a href="k6_http.js.html#line108">line 108</a>
     </li></ul></dd>
-    
 
-    
 
-    
+
+
+
     <dt class="tag-see">See:</dt>
     <dd class="tag-see">
         <ul>
             <li><a href="module-k6_http.html#.request">module:k6/http.request</a></li>
         </ul>
     </dd>
-    
 
-    
+
+
 </dl>
 
 
@@ -616,7 +627,7 @@
 
 <h5>Returns:</h5>
 
-        
+
 
 
 <dl>
@@ -624,25 +635,25 @@
         Type
     </dt>
     <dd>
-        
+
 <span class="param-type"><a href="module-k6_http.Response.html">module:k6/http.Response</a></span>
 
 
     </dd>
 </dl>
 
-    
 
 
 
-        
-            
 
-    
+
+
+
+
 
     <h4 class="name" id=".get"><span class="type-signature">(static) </span>get<span class="signature">(url, params)</span><span class="type-signature"> &rarr; {<a href="module-k6_http.Response.html">module:k6/http.Response</a>}</span></h4>
 
-    
+
 
 
 
@@ -659,73 +670,73 @@
 
 
     <h5>Parameters:</h5>
-    
+
 
 <table class="params">
     <thead>
     <tr>
-        
+
         <th>Name</th>
-        
+
 
         <th>Type</th>
 
-        
 
-        
+
+
 
         <th class="last">Description</th>
     </tr>
     </thead>
 
     <tbody>
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>url</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request URL (eg. &quot;http://example.com/&quot;)</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>params</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Additional parameters.</p></td>
         </tr>
 
-    
+
     </tbody>
 </table>
 
@@ -736,49 +747,49 @@
 
 <dl class="details">
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="k6_http.js.html">k6/http.js</a>, <a href="k6_http.js.html#line72">line 72</a>
     </li></ul></dd>
-    
 
-    
 
-    
+
+
+
     <dt class="tag-see">See:</dt>
     <dd class="tag-see">
         <ul>
             <li><a href="module-k6_http.html#.request">module:k6/http.request</a></li>
         </ul>
     </dd>
-    
 
-    
+
+
 </dl>
 
 
@@ -795,7 +806,7 @@
 
 <h5>Returns:</h5>
 
-        
+
 
 
 <dl>
@@ -803,25 +814,25 @@
         Type
     </dt>
     <dd>
-        
+
 <span class="param-type"><a href="module-k6_http.Response.html">module:k6/http.Response</a></span>
 
 
     </dd>
 </dl>
 
-    
 
 
 
-        
-            
 
-    
+
+
+
+
 
     <h4 class="name" id=".options"><span class="type-signature">(static) </span>options<span class="signature">(url, body, params)</span><span class="type-signature"> &rarr; {<a href="module-k6_http.Response.html">module:k6/http.Response</a>}</span></h4>
 
-    
+
 
 
 
@@ -838,99 +849,99 @@
 
 
     <h5>Parameters:</h5>
-    
+
 
 <table class="params">
     <thead>
     <tr>
-        
+
         <th>Name</th>
-        
+
 
         <th>Type</th>
 
-        
 
-        
+
+
 
         <th class="last">Description</th>
     </tr>
     </thead>
 
     <tbody>
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>url</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request URL (eg. &quot;http://example.com/&quot;)</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>body</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 |
 
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request body; objects will be query encoded.</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>params</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Additional parameters.</p></td>
         </tr>
 
-    
+
     </tbody>
 </table>
 
@@ -941,49 +952,49 @@
 
 <dl class="details">
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="k6_http.js.html">k6/http.js</a>, <a href="k6_http.js.html#line144">line 144</a>
     </li></ul></dd>
-    
 
-    
 
-    
+
+
+
     <dt class="tag-see">See:</dt>
     <dd class="tag-see">
         <ul>
             <li><a href="module-k6_http.html#.request">module:k6/http.request</a></li>
         </ul>
     </dd>
-    
 
-    
+
+
 </dl>
 
 
@@ -1000,7 +1011,7 @@
 
 <h5>Returns:</h5>
 
-        
+
 
 
 <dl>
@@ -1008,25 +1019,25 @@
         Type
     </dt>
     <dd>
-        
+
 <span class="param-type"><a href="module-k6_http.Response.html">module:k6/http.Response</a></span>
 
 
     </dd>
 </dl>
 
-    
 
 
 
-        
-            
 
-    
+
+
+
+
 
     <h4 class="name" id=".patch"><span class="type-signature">(static) </span>patch<span class="signature">(url, body, params)</span><span class="type-signature"> &rarr; {<a href="module-k6_http.Response.html">module:k6/http.Response</a>}</span></h4>
 
-    
+
 
 
 
@@ -1043,99 +1054,99 @@
 
 
     <h5>Parameters:</h5>
-    
+
 
 <table class="params">
     <thead>
     <tr>
-        
+
         <th>Name</th>
-        
+
 
         <th>Type</th>
 
-        
 
-        
+
+
 
         <th class="last">Description</th>
     </tr>
     </thead>
 
     <tbody>
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>url</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request URL (eg. &quot;http://example.com/&quot;)</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>body</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 |
 
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request body; objects will be query encoded.</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>params</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Additional parameters.</p></td>
         </tr>
 
-    
+
     </tbody>
 </table>
 
@@ -1146,49 +1157,49 @@
 
 <dl class="details">
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="k6_http.js.html">k6/http.js</a>, <a href="k6_http.js.html#line120">line 120</a>
     </li></ul></dd>
-    
 
-    
 
-    
+
+
+
     <dt class="tag-see">See:</dt>
     <dd class="tag-see">
         <ul>
             <li><a href="module-k6_http.html#.request">module:k6/http.request</a></li>
         </ul>
     </dd>
-    
 
-    
+
+
 </dl>
 
 
@@ -1205,7 +1216,7 @@
 
 <h5>Returns:</h5>
 
-        
+
 
 
 <dl>
@@ -1213,25 +1224,25 @@
         Type
     </dt>
     <dd>
-        
+
 <span class="param-type"><a href="module-k6_http.Response.html">module:k6/http.Response</a></span>
 
 
     </dd>
 </dl>
 
-    
 
 
 
-        
-            
 
-    
+
+
+
+
 
     <h4 class="name" id=".post"><span class="type-signature">(static) </span>post<span class="signature">(url, body, params)</span><span class="type-signature"> &rarr; {<a href="module-k6_http.Response.html">module:k6/http.Response</a>}</span></h4>
 
-    
+
 
 
 
@@ -1248,99 +1259,99 @@
 
 
     <h5>Parameters:</h5>
-    
+
 
 <table class="params">
     <thead>
     <tr>
-        
+
         <th>Name</th>
-        
+
 
         <th>Type</th>
 
-        
 
-        
+
+
 
         <th class="last">Description</th>
     </tr>
     </thead>
 
     <tbody>
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>url</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request URL (eg. &quot;http://example.com/&quot;)</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>body</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 |
 
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request body; objects will be query encoded.</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>params</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Additional parameters.</p></td>
         </tr>
 
-    
+
     </tbody>
 </table>
 
@@ -1351,49 +1362,49 @@
 
 <dl class="details">
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="k6_http.js.html">k6/http.js</a>, <a href="k6_http.js.html#line84">line 84</a>
     </li></ul></dd>
-    
 
-    
 
-    
+
+
+
     <dt class="tag-see">See:</dt>
     <dd class="tag-see">
         <ul>
             <li><a href="module-k6_http.html#.request">module:k6/http.request</a></li>
         </ul>
     </dd>
-    
 
-    
+
+
 </dl>
 
 
@@ -1410,7 +1421,7 @@
 
 <h5>Returns:</h5>
 
-        
+
 
 
 <dl>
@@ -1418,25 +1429,25 @@
         Type
     </dt>
     <dd>
-        
+
 <span class="param-type"><a href="module-k6_http.Response.html">module:k6/http.Response</a></span>
 
 
     </dd>
 </dl>
 
-    
 
 
 
-        
-            
 
-    
+
+
+
+
 
     <h4 class="name" id=".put"><span class="type-signature">(static) </span>put<span class="signature">(url, body, params)</span><span class="type-signature"> &rarr; {<a href="module-k6_http.Response.html">module:k6/http.Response</a>}</span></h4>
 
-    
+
 
 
 
@@ -1453,99 +1464,99 @@
 
 
     <h5>Parameters:</h5>
-    
+
 
 <table class="params">
     <thead>
     <tr>
-        
+
         <th>Name</th>
-        
+
 
         <th>Type</th>
 
-        
 
-        
+
+
 
         <th class="last">Description</th>
     </tr>
     </thead>
 
     <tbody>
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>url</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request URL (eg. &quot;http://example.com/&quot;)</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>body</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 |
 
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request body; objects will be query encoded.</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>params</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Additional parameters.</p></td>
         </tr>
 
-    
+
     </tbody>
 </table>
 
@@ -1556,49 +1567,49 @@
 
 <dl class="details">
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="k6_http.js.html">k6/http.js</a>, <a href="k6_http.js.html#line96">line 96</a>
     </li></ul></dd>
-    
 
-    
 
-    
+
+
+
     <dt class="tag-see">See:</dt>
     <dd class="tag-see">
         <ul>
             <li><a href="module-k6_http.html#.request">module:k6/http.request</a></li>
         </ul>
     </dd>
-    
 
-    
+
+
 </dl>
 
 
@@ -1615,7 +1626,7 @@
 
 <h5>Returns:</h5>
 
-        
+
 
 
 <dl>
@@ -1623,25 +1634,25 @@
         Type
     </dt>
     <dd>
-        
+
 <span class="param-type"><a href="module-k6_http.Response.html">module:k6/http.Response</a></span>
 
 
     </dd>
 </dl>
 
-    
 
 
 
-        
-            
 
-    
+
+
+
+
 
     <h4 class="name" id=".request"><span class="type-signature">(static) </span>request<span class="signature">(method, url, body, params)</span><span class="type-signature"> &rarr; {<a href="module-k6_http.Response.html">module:k6/http.Response</a>}</span></h4>
 
-    
+
 
 
 
@@ -1658,122 +1669,122 @@
 
 
     <h5>Parameters:</h5>
-    
+
 
 <table class="params">
     <thead>
     <tr>
-        
+
         <th>Name</th>
-        
+
 
         <th>Type</th>
 
-        
 
-        
+
+
 
         <th class="last">Description</th>
     </tr>
     </thead>
 
     <tbody>
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>method</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>HTTP Method (eg. &quot;GET&quot;)</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>url</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request URL (eg. &quot;http://example.com/&quot;)</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>body</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 |
 
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request body; objects will be query encoded.</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>params</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Additional parameters.</p></td>
         </tr>
 
-    
+
     </tbody>
 </table>
 
@@ -1784,42 +1795,42 @@
 
 <dl class="details">
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="k6_http.js.html">k6/http.js</a>, <a href="k6_http.js.html#line59">line 59</a>
     </li></ul></dd>
-    
 
-    
 
-    
 
-    
+
+
+
+
 </dl>
 
 
@@ -1836,7 +1847,7 @@
 
 <h5>Returns:</h5>
 
-        
+
 
 
 <dl>
@@ -1844,25 +1855,25 @@
         Type
     </dt>
     <dd>
-        
+
 <span class="param-type"><a href="module-k6_http.Response.html">module:k6/http.Response</a></span>
 
 
     </dd>
 </dl>
 
-    
 
 
 
-        
-            
 
-    
+
+
+
+
 
     <h4 class="name" id=".trace"><span class="type-signature">(static) </span>trace<span class="signature">(url, body, params)</span><span class="type-signature"> &rarr; {<a href="module-k6_http.Response.html">module:k6/http.Response</a>}</span></h4>
 
-    
+
 
 
 
@@ -1879,99 +1890,99 @@
 
 
     <h5>Parameters:</h5>
-    
+
 
 <table class="params">
     <thead>
     <tr>
-        
+
         <th>Name</th>
-        
+
 
         <th>Type</th>
 
-        
 
-        
+
+
 
         <th class="last">Description</th>
     </tr>
     </thead>
 
     <tbody>
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>url</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request URL (eg. &quot;http://example.com/&quot;)</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>body</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">string</span>
 |
 
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Request body; objects will be query encoded.</p></td>
         </tr>
 
-    
+
 
         <tr>
-            
+
                 <td class="name"><code>params</code></td>
-            
+
 
             <td class="type">
-            
-                
+
+
 <span class="param-type">Object</span>
 
 
-            
+
             </td>
 
-            
 
-            
+
+
 
             <td class="description last"><p>Additional parameters.</p></td>
         </tr>
 
-    
+
     </tbody>
 </table>
 
@@ -1982,49 +1993,49 @@
 
 <dl class="details">
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="k6_http.js.html">k6/http.js</a>, <a href="k6_http.js.html#line156">line 156</a>
     </li></ul></dd>
-    
 
-    
 
-    
+
+
+
     <dt class="tag-see">See:</dt>
     <dd class="tag-see">
         <ul>
             <li><a href="module-k6_http.html#.request">module:k6/http.request</a></li>
         </ul>
     </dd>
-    
 
-    
+
+
 </dl>
 
 
@@ -2041,7 +2052,7 @@
 
 <h5>Returns:</h5>
 
-        
+
 
 
 <dl>
@@ -2049,23 +2060,23 @@
         Type
     </dt>
     <dd>
-        
+
 <span class="param-type"><a href="module-k6_http.Response.html">module:k6/http.Response</a></span>
 
 
     </dd>
 </dl>
 
-    
 
 
 
-        
-    
 
-    
 
-    
+
+
+
+
+
 </article>
 
 </section>
