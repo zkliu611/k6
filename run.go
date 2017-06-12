@@ -662,7 +662,21 @@ loop:
 		default:
 			var parts []string
 			for _, k := range keys {
-				parts = append(parts, fmt.Sprintf("%s=%s", k, color.CyanString(m.HumanizeValue(sample[k]))))
+				vstr := color.CyanString(m.HumanizeValue(sample[k]))
+				kstr := k
+
+			outer:
+				for _, th := range m.Thresholds.Thresholds {
+					for _, ref := range th.Refs {
+						if ref == k {
+							vstr = color.New(color.FgCyan).Sprint(vstr)
+							kstr = color.New(color.Bold).Sprint(kstr)
+							break outer
+						}
+					}
+				}
+
+				parts = append(parts, fmt.Sprintf("%s=%s", kstr, vstr))
 			}
 			val = strings.Join(parts, " ")
 		}
