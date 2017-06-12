@@ -29,15 +29,16 @@ import (
 )
 
 func TestNewThreshold(t *testing.T) {
-	src := `1+1==2`
+	src := `v==2`
 	rt := goja.New()
 	th, err := NewThreshold(src, rt)
-	assert.NoError(t, err)
-
-	assert.Equal(t, src, th.Source)
-	assert.False(t, th.Failed)
-	assert.NotNil(t, th.pgm)
-	assert.Equal(t, rt, th.rt)
+	if assert.NoError(t, err) {
+		assert.Equal(t, src, th.Source)
+		assert.False(t, th.Failed)
+		assert.Equal(t, []string{"v"}, th.Refs)
+		assert.NotNil(t, th.pgm)
+		assert.Equal(t, rt, th.rt)
+	}
 }
 
 func TestThresholdRun(t *testing.T) {
