@@ -29,6 +29,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/loadimpact/k6/core/cloud"
 	"github.com/loadimpact/k6/lib"
 	"github.com/loadimpact/k6/stats"
 	"github.com/mitchellh/mapstructure"
@@ -55,9 +56,9 @@ type Collector struct {
 
 	duration   int64
 	thresholds map[string][]*stats.Threshold
-	client     *Client
+	client     *cloud.Client
 
-	sampleBuffer []*Sample
+	sampleBuffer []*cloud.Sample
 	sampleMu     sync.Mutex
 }
 
@@ -90,7 +91,7 @@ func New(fname string, src *lib.SourceData, opts lib.Options, version string) (*
 		name:       getName(src, extConfig),
 		project_id: getProjectId(extConfig),
 		thresholds: thresholds,
-		client:     NewClient(token, "", version),
+		client:     cloud.NewClient(token, "", version),
 		duration:   duration,
 	}, nil
 }
@@ -104,7 +105,7 @@ func (c *Collector) Init() error {
 		}
 	}
 
-	testRun := &TestRun{
+	testRun := &cloud.TestRun{
 		Name:       c.name,
 		Thresholds: thresholds,
 		Duration:   c.duration,
@@ -141,8 +142,7 @@ func (c *Collector) String() string {
 	}
 
 	switch c.initErr {
-	case ErrNotAuthorized:
-	case ErrNotAuthorized:
+	case cloud.ErrNotAuthorized:
 		return c.initErr.Error()
 	}
 	return fmt.Sprintf("Failed to create test in Load Impact cloud")
@@ -172,12 +172,12 @@ func (c *Collector) Collect(samples []stats.Sample) {
 		return
 	}
 
-	var cloudSamples []*Sample
+	var cloudSamples []*cloud.Sample
 	for _, samp := range samples {
-		sampleJSON := &Sample{
+		sampleJSON := &cloud.Sample{
 			Type:   "Point",
 			Metric: samp.Metric.Name,
-			Data: SampleData{
+			Data: cloud.SampleData{
 				Type:  samp.Metric.Type,
 				Time:  samp.Time,
 				Value: samp.Value,
@@ -222,7 +222,7 @@ func (c *Collector) testFinished() {
 	}
 
 	testTainted := false
-	thresholdResults := make(ThresholdResult)
+	thresholdResults := make(cloud.ThresholdResult)
 	for name, thresholds := range c.thresholds {
 		thresholdResults[name] = make(map[string]bool)
 		for _, t := range thresholds {
