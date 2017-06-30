@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/loadimpact/k6/lib"
 	"github.com/loadimpact/k6/stats"
 	"github.com/pkg/errors"
 )
@@ -111,4 +112,15 @@ func (c *Client) TestFinished(referenceID string, thresholds ThresholdResult, ta
 
 	err = c.Do(req, nil)
 	return err
+}
+
+func (c *Client) ValidateConfig(opts lib.Options) error {
+	url := c.baseURL + "/validate-config"
+
+	req, err := c.NewRequest("POST", url, opts)
+	if err != nil {
+		return err
+	}
+
+	return c.Do(req, nil)
 }

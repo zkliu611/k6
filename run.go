@@ -43,13 +43,14 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/loadimpact/k6/api"
 	"github.com/loadimpact/k6/core"
+	cloudexec "github.com/loadimpact/k6/core/cloud"
 	"github.com/loadimpact/k6/core/local"
 	"github.com/loadimpact/k6/js"
 	"github.com/loadimpact/k6/lib"
 	"github.com/loadimpact/k6/loader"
 	"github.com/loadimpact/k6/simple"
 	"github.com/loadimpact/k6/stats"
-	"github.com/loadimpact/k6/stats/cloud"
+	cloudcoll "github.com/loadimpact/k6/stats/cloud"
 	"github.com/loadimpact/k6/stats/influxdb"
 	"github.com/loadimpact/k6/stats/json"
 	"github.com/loadimpact/k6/ui"
@@ -144,6 +145,12 @@ var commandRun = cli.Command{
 		cli.BoolFlag{
 			Name:  "quiet, q",
 			Usage: "hide the progress bar",
+		},
+		cli.StringFlag{
+			Name:   "run, r",
+			Usage:  "where to run the test (local or cloud)",
+			EnvVar: "K6_RUN",
+			Value:  "local",
 		},
 		cli.StringFlag{
 			Name:   "out, o",
@@ -279,7 +286,7 @@ func makeCollector(s string, conf Config, src *lib.SourceData, opts lib.Options,
 	case CollectorJSON:
 		return json.New(p, afero.NewOsFs(), opts)
 	case CollectorCloud:
-		return cloud.New(p, src, opts, version)
+		return cloudcoll.New(p, src, opts, version)
 	default:
 		return nil, errors.New("Unknown output type: " + t)
 	}
@@ -383,6 +390,7 @@ func actionRun(cc *cli.Context) error {
 
 	// Collect CLI arguments, most (not all) relating to options.
 	addr := cc.GlobalString("address")
+	run := cc.String("run")
 	out := cc.String("out")
 	quiet := cc.Bool("quiet")
 	cliOpts, err := getOptions(cc)
@@ -432,6 +440,17 @@ func actionRun(cc *cli.Context) error {
 			return err
 		}
 		collector = c
+	}
+
+	// Make the executor; default to a local one.
+	var executor lib.Executor
+	switch run {
+	case "", "local":
+		executor = local.New(runner)
+	case "cloud":
+		executor = cloudexec.New(runner, src, cc.App.Version)
+	default:
+		return cli.NewExitError(fmt.Sprintf("unknown value for --run/-r: %s", run), 1)
 	}
 
 	fmt.Fprintln(color.Output, "")

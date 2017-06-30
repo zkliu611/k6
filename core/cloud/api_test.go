@@ -21,14 +21,18 @@
 package cloud
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/loadimpact/k6/lib"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/guregu/null.v3"
 )
 
 func init() {
@@ -92,6 +96,42 @@ func TestFinished(t *testing.T) {
 	err := client.TestFinished("1", thresholds, true)
 
 	assert.Nil(t, err)
+}
+
+func TestValidateConfig(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		data, err := ioutil.ReadAll(r.Body)
+		if !assert.NoError(t, err) {
+			return
+		}
+
+		var opts lib.Options
+		assert.NoError(t, json.Unmarshal(data, &opts))
+		if opts.VUs.Valid && opts.VUs.Int64 > 3000 {
+			w.WriteHeader(http.StatusBadRequest)
+			assert.NoError(t, json.NewEncoder(w).Encode(ErrorResponsePayload{
+				ErrorResponse{
+					Code:    0,
+					Message: "Validation failed",
+					Details: fmt.Sprintf("Too many users for subscription: %d > 3000", opts.VUs.Int64),
+				},
+			}))
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient("token", server.URL, "1.0")
+
+	t.Run("Valid", func(t *testing.T) {
+		assert.NoError(t, client.ValidateConfig(lib.Options{
+			VUs: null.IntFrom(100),
+		}))
+	})
+	t.Run("Too Many Users", func(t *testing.T) {
+		assert.EqualError(t, client.ValidateConfig(lib.Options{
+			VUs: null.IntFrom(100000),
+		}), "Validation failed: Too many users for subscription: 100000 > 3000")
+	})
 }
 
 func TestAuthorizedError(t *testing.T) {
