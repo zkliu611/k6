@@ -31,10 +31,12 @@ import (
 
 // An Executor wraps a Runner, and abstracts away an execution environment.
 type Executor interface {
+	Init() error
+
 	Run(ctx context.Context, out chan<- []stats.Sample) error
 	IsRunning() bool
 
-	GetRunner() Runner
+	GetRootGroup() *Group
 
 	SetLogger(l *log.Logger)
 	GetLogger() *log.Logger

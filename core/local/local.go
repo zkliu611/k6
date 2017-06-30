@@ -115,6 +115,10 @@ func New(r lib.Runner) *Executor {
 	}
 }
 
+func (e *Executor) Init() error {
+	return nil
+}
+
 func (e *Executor) Run(parent context.Context, out chan<- []stats.Sample) error {
 	e.runLock.Lock()
 	defer e.runLock.Unlock()
@@ -221,8 +225,8 @@ func (e *Executor) IsRunning() bool {
 	return e.ctx != nil
 }
 
-func (e *Executor) GetRunner() lib.Runner {
-	return e.Runner
+func (e *Executor) GetRootGroup() *lib.Group {
+	return e.Runner.GetDefaultGroup()
 }
 
 func (e *Executor) SetLogger(l *log.Logger) {
