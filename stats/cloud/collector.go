@@ -24,8 +24,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strconv"
 	"sync"
 	"time"
 
@@ -37,14 +35,8 @@ import (
 )
 
 const (
-	TestName          = "k6 test"
 	MetricPushinteral = 1 * time.Second
 )
-
-type loadimpactConfig struct {
-	ProjectId int    `mapstructure:"project_id"`
-	Name      string `mapstructure:"name"`
-}
 
 // Collector sends result data to the Load Impact cloud service.
 type Collector struct {
@@ -66,7 +58,7 @@ type Collector struct {
 func New(fname string, src *lib.SourceData, opts lib.Options, version string) (*Collector, error) {
 	token := os.Getenv("K6CLOUD_TOKEN")
 
-	var extConfig loadimpactConfig
+	var extConfig cloud.LoadImpactConfig
 	if val, ok := opts.External["loadimpact"]; ok {
 		err := mapstructure.Decode(val, &extConfig)
 		if err != nil {
@@ -253,40 +245,4 @@ func sumStages(stages []lib.Stage) int64 {
 	}
 
 	return int64(total.Seconds())
-}
-
-func getProjectId(extConfig loadimpactConfig) int {
-	env := os.Getenv("K6CLOUD_PROJECTID")
-	if env != "" {
-		id, err := strconv.Atoi(env)
-		if err == nil && id > 0 {
-			return id
-		}
-	}
-
-	if extConfig.ProjectId > 0 {
-		return extConfig.ProjectId
-	}
-
-	return 0
-}
-
-func getName(src *lib.SourceData, extConfig loadimpactConfig) string {
-	envName := os.Getenv("K6CLOUD_NAME")
-	if envName != "" {
-		return envName
-	}
-
-	if extConfig.Name != "" {
-		return extConfig.Name
-	}
-
-	if src.Filename != "" && src.Filename != "-" {
-		name := filepath.Base(src.Filename)
-		if name != "" || name != "." {
-			return name
-		}
-	}
-
-	return TestName
 }

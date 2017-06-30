@@ -27,8 +27,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strconv"
 	"time"
 
+	"github.com/loadimpact/k6/lib"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -36,6 +39,42 @@ import (
 const (
 	RequestTimeout = 10 * time.Second
 )
+
+type LoadImpactConfig struct {
+	ProjectId int    `mapstructure:"project_id"`
+	Name      string `mapstructure:"name"`
+}
+
+func (cfg LoadImpactConfig) GetProjectId() int {
+	env := os.Getenv("K6CLOUD_PROJECTID")
+	if env != "" {
+		id, err := strconv.Atoi(env)
+		if err == nil && id > 0 {
+			return id
+		}
+	}
+	return cfg.ProjectId
+}
+
+func (cfg LoadImpactConfig) GetName(src *lib.SourceData) string {
+	envName := os.Getenv("K6CLOUD_NAME")
+	if envName != "" {
+		return envName
+	}
+
+	if cfg.Name != "" {
+		return cfg.Name
+	}
+
+	if src.Filename != "" && src.Filename != "-" {
+		name := filepath.Base(src.Filename)
+		if name != "" && name != "." {
+			return name
+		}
+	}
+
+	return "k6 test"
+}
 
 // Client handles communication with Load Impact cloud API.
 type Client struct {
