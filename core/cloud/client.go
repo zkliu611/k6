@@ -126,22 +126,9 @@ func checkResponse(r *http.Response) error {
 	}
 
 	// Struct of errors set back from API
-	errorStruct := &struct {
-		ErrorData struct {
-			Message string `json:"message"`
-			Code    int    `json:"code"`
-		} `json:"error"`
-	}{}
-
-	if err := json.NewDecoder(r.Body).Decode(errorStruct); err != nil {
+	var payload ErrorResponsePayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		return errors.Wrap(err, "Non-standard API error response")
 	}
-
-	errorResponse := &ErrorResponse{
-		Response: r,
-		Message:  errorStruct.ErrorData.Message,
-		Code:     errorStruct.ErrorData.Code,
-	}
-
-	return errorResponse
+	return payload.Error
 }
