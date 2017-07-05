@@ -117,7 +117,7 @@ func (c *Client) TestFinished(referenceID string, thresholds ThresholdResult, ta
 func (c *Client) ValidateConfig(opts lib.Options) error {
 	url := c.baseURL + "/validate-config"
 
-	req, err := c.NewRequest("POST", url, opts)
+	req, err := c.NewRequest("POST", url, map[string]interface{}{"config": opts})
 	if err != nil {
 		return err
 	}

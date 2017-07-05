@@ -27,7 +27,7 @@ import (
 
 	"github.com/loadimpact/k6/lib"
 	"github.com/loadimpact/k6/stats"
-	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	null "gopkg.in/guregu/null.v3"
 )
@@ -37,26 +37,16 @@ type Executor struct {
 	Archive *lib.Archive
 }
 
-func New(r lib.Runner, src *lib.SourceData, version string) (*Executor, error) {
+func New(r lib.Runner, src *lib.SourceData, version string) *Executor {
 	token := os.Getenv("K6CLOUD_TOKEN")
-	opts := r.GetOptions()
-
-	var extConfig LoadImpactConfig
-	if val, ok := opts.External["loadimpact"]; ok {
-		err := mapstructure.Decode(val, &extConfig)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return &Executor{
 		Client:  NewClient(token, "", version),
 		Archive: r.MakeArchive(),
-	}, nil
+	}
 }
 
 func (e *Executor) Init() error {
-	return nil
+	return e.Client.ValidateConfig(e.Archive.Options)
 }
 
 func (e *Executor) Run(ctx context.Context, out chan<- []stats.Sample) error {
@@ -112,7 +102,7 @@ func (e *Executor) GetVUs() int64 {
 }
 
 func (e *Executor) SetVUs(vus int64) error {
-	return nil
+	return errors.New("not yet implemented")
 }
 
 func (e *Executor) GetVUsMax() int64 {
@@ -120,5 +110,5 @@ func (e *Executor) GetVUsMax() int64 {
 }
 
 func (e *Executor) SetVUsMax(max int64) error {
-	return nil
+	return errors.New("not yet implemented")
 }

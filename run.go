@@ -70,6 +70,9 @@ const (
 	CollectorJSON     = "json"
 	CollectorInfluxDB = "influxdb"
 	CollectorCloud    = "cloud"
+
+	ExecutorLocal = "local"
+	ExecutorCloud = "cloud"
 )
 
 var urlRegex = regexp.MustCompile(`(?i)^https?://`)
@@ -147,9 +150,9 @@ var commandRun = cli.Command{
 			Usage: "hide the progress bar",
 		},
 		cli.StringFlag{
-			Name:   "run, r",
-			Usage:  "where to run the test (local or cloud)",
-			EnvVar: "K6_RUN",
+			Name:   "execute, x",
+			Usage:  "where to execute the test (local/cloud)",
+			EnvVar: "K6_EXECUTE",
 			Value:  "local",
 		},
 		cli.StringFlag{
@@ -390,7 +393,7 @@ func actionRun(cc *cli.Context) error {
 
 	// Collect CLI arguments, most (not all) relating to options.
 	addr := cc.GlobalString("address")
-	run := cc.String("run")
+	execute := cc.String("execute")
 	out := cc.String("out")
 	quiet := cc.Bool("quiet")
 	cliOpts, err := getOptions(cc)
@@ -444,13 +447,13 @@ func actionRun(cc *cli.Context) error {
 
 	// Make the executor; default to a local one.
 	var executor lib.Executor
-	switch run {
-	case "", "local":
+	switch execute {
+	case ExecutorLocal:
 		executor = local.New(runner)
-	case "cloud":
+	case ExecutorCloud:
 		executor = cloudexec.New(runner, src, cc.App.Version)
 	default:
-		return cli.NewExitError(fmt.Sprintf("unknown value for --run/-r: %s", run), 1)
+		return cli.NewExitError(fmt.Sprintf("unknown value for --execute/-x: %s", execute), 1)
 	}
 
 	fmt.Fprintln(color.Output, "")
@@ -460,6 +463,10 @@ func actionRun(cc *cli.Context) error {
 	color.Cyan(`    /  \/    \    |      |  /  ‾‾\  `)
 	color.Cyan(`   /          \   |  |‾\  \ | (_) | `)
 	color.Cyan(`  / __________ \  |__|  \__\ \___/  Welcome to k6 v%s!`, cc.App.Version)
+
+	if err := executor.Init(); err != nil {
+		return err
+	}
 
 	collectorString := "-"
 	if collector != nil {
@@ -471,7 +478,7 @@ func actionRun(cc *cli.Context) error {
 
 	fmt.Fprintln(color.Output, "")
 
-	fmt.Fprintf(color.Output, "  execution: %s\n", color.CyanString("local"))
+	fmt.Fprintf(color.Output, "  execution: %s\n", color.CyanString(fmt.Sprint(executor)))
 	fmt.Fprintf(color.Output, "     output: %s\n", color.CyanString(collectorString))
 	fmt.Fprintf(color.Output, "     script: %s (%s)\n", color.CyanString(src.Filename), color.CyanString(runnerType))
 	fmt.Fprintf(color.Output, "\n")
@@ -482,7 +489,7 @@ func actionRun(cc *cli.Context) error {
 	fmt.Fprintf(color.Output, "\n")
 
 	// Make the Engine
-	engine, err := core.NewEngine(local.New(runner), opts)
+	engine, err := core.NewEngine(executor, opts)
 	if err != nil {
 		log.WithError(err).Error("Couldn't create the engine")
 		return err
@@ -658,7 +665,7 @@ loop:
 		}
 	}
 
-	printGroup(engine.Executor.GetRunner().GetDefaultGroup(), 1)
+	printGroup(engine.Executor.GetRootGroup(), 1)
 
 	// Sort and print metrics.
 	metricNames := make([]string, 0, len(engine.Metrics))

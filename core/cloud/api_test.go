@@ -105,15 +105,17 @@ func TestValidateConfig(t *testing.T) {
 			return
 		}
 
-		var opts lib.Options
-		assert.NoError(t, json.Unmarshal(data, &opts))
-		if opts.VUs.Valid && opts.VUs.Int64 > 3000 {
+		var payload struct {
+			Config lib.Options `json:"config"`
+		}
+		assert.NoError(t, json.Unmarshal(data, &payload))
+		if payload.Config.VUs.Valid && payload.Config.VUs.Int64 > 3000 {
 			w.WriteHeader(http.StatusBadRequest)
 			assert.NoError(t, json.NewEncoder(w).Encode(ErrorResponsePayload{
 				ErrorResponse{
 					Code:    0,
 					Message: "Validation failed",
-					Details: fmt.Sprintf("Too many users for subscription: %d > 3000", opts.VUs.Int64),
+					Details: fmt.Sprintf("Too many users for subscription: %d > 3000", payload.Config.VUs.Int64),
 				},
 			}))
 		}

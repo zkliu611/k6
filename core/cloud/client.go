@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -164,10 +165,14 @@ func checkResponse(r *http.Response) error {
 		return ErrNotAuthorized
 	}
 
-	// Struct of errors set back from API
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
 	var payload ErrorResponsePayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		return errors.Wrap(err, "Non-standard API error response")
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return errors.Wrap(err, "Non-standard API error response: "+string(data))
 	}
 	return payload.Error
 }

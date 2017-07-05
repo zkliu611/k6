@@ -80,8 +80,8 @@ func New(fname string, src *lib.SourceData, opts lib.Options, version string) (*
 	}
 
 	return &Collector{
-		name:       getName(src, extConfig),
-		project_id: getProjectId(extConfig),
+		name:       extConfig.GetName(src),
+		project_id: extConfig.GetProjectId(),
 		thresholds: thresholds,
 		client:     cloud.NewClient(token, "", version),
 		duration:   duration,
