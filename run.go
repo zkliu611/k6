@@ -665,7 +665,9 @@ loop:
 		}
 	}
 
-	printGroup(engine.Executor.GetRootGroup(), 1)
+	if root := engine.Executor.GetRootGroup(); root != nil {
+		printGroup(root, 1)
+	}
 
 	// Sort and print metrics.
 	metricNames := make([]string, 0, len(engine.Metrics))

@@ -23,25 +23,45 @@ package cloud
 import (
 	"context"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/loadimpact/k6/lib"
 	"github.com/loadimpact/k6/stats"
-	"github.com/pkg/errors"
+	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 	null "gopkg.in/guregu/null.v3"
 )
 
 type Executor struct {
+	runLock sync.Mutex
+	Logger  *log.Logger
+
 	Client  *Client
 	Archive *lib.Archive
+	Name    string
+
+	lock    sync.RWMutex
+	running bool
 }
 
 func New(r lib.Runner, src *lib.SourceData, version string) *Executor {
 	token := os.Getenv("K6CLOUD_TOKEN")
+	opts := r.GetOptions()
+
+	var extConfig LoadImpactConfig
+	if val, ok := opts.External["loadimpact"]; ok {
+		err := mapstructure.Decode(val, &extConfig)
+		if err != nil {
+			log.Warn("Malformed loadimpact settings in script options")
+		}
+	}
+
 	return &Executor{
+		Logger:  log.StandardLogger(),
 		Client:  NewClient(token, "", version),
 		Archive: r.MakeArchive(),
+		Name:    extConfig.GetName(src),
 	}
 }
 
@@ -50,11 +70,49 @@ func (e *Executor) Init() error {
 }
 
 func (e *Executor) Run(ctx context.Context, out chan<- []stats.Sample) error {
-	return nil
+	e.runLock.Lock()
+	defer e.runLock.Unlock()
+
+	e.lock.Lock()
+	e.running = true
+	e.lock.Unlock()
+
+	refID, err := e.Client.ArchiveUpload(e.Name, e.Archive)
+	if err != nil {
+		return err
+	}
+
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			resp, err := e.Client.TestProgress(refID)
+			if err != nil {
+				e.Logger.WithError(err).Error("Couldn't get cloud test status")
+				continue
+				// return err
+			}
+			e.Logger.WithFields(log.Fields{
+				"progress": resp.Progress,
+				"status":   resp.Status,
+			}).Debug("Received cloud execution status")
+
+			if resp.Progress != 0 {
+				e.Logger.WithField("progress", resp.Progress).Debug("-> Cloud execution ended")
+				return nil
+			}
+		case <-ctx.Done():
+			return nil
+		}
+	}
 }
 
 func (e *Executor) IsRunning() bool {
-	return true
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	return e.running
 }
 
 func (e *Executor) GetRootGroup() *lib.Group {
@@ -62,10 +120,11 @@ func (e *Executor) GetRootGroup() *lib.Group {
 }
 
 func (e *Executor) SetLogger(l *log.Logger) {
+	e.Logger = l
 }
 
 func (e *Executor) GetLogger() *log.Logger {
-	return nil
+	return e.Logger
 }
 
 func (e *Executor) GetIterations() int64 {
@@ -102,7 +161,7 @@ func (e *Executor) GetVUs() int64 {
 }
 
 func (e *Executor) SetVUs(vus int64) error {
-	return errors.New("not yet implemented")
+	return nil
 }
 
 func (e *Executor) GetVUsMax() int64 {
@@ -110,5 +169,5 @@ func (e *Executor) GetVUsMax() int64 {
 }
 
 func (e *Executor) SetVUsMax(max int64) error {
-	return errors.New("not yet implemented")
+	return nil
 }

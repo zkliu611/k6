@@ -21,7 +21,10 @@
 package cloud
 
 import (
+	"bytes"
 	"fmt"
+	"mime/multipart"
+	"net/http"
 	"time"
 
 	"github.com/loadimpact/k6/lib"
@@ -123,4 +126,60 @@ func (c *Client) ValidateConfig(opts lib.Options) error {
 	}
 
 	return c.Do(req, nil)
+}
+
+func (c *Client) ArchiveUpload(name string, arc *lib.Archive) (refID string, err error) {
+	url := c.baseURL + "/archive-upload"
+
+	buf := bytes.NewBuffer(nil)
+	mp := multipart.NewWriter(buf)
+	if err := mp.WriteField("name", name); err != nil {
+		return "", err
+	}
+
+	fw, err := mp.CreateFormFile("file", "archive.tar")
+	if err != nil {
+		return "", err
+	}
+	if err := arc.Write(fw); err != nil {
+		return "", err
+	}
+
+	if err := mp.Close(); err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", url, buf)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", mp.FormDataContentType())
+
+	var resp struct {
+		ReferenceID string `json:"reference_id"`
+	}
+	if err := c.Do(req, &resp); err != nil {
+		return "", err
+	}
+	return resp.ReferenceID, nil
+}
+
+type TestProgressResponse struct {
+	Progress int    `json:"progress"`
+	Status   string `json:"status"`
+}
+
+func (c *Client) TestProgress(refID string) (TestProgressResponse, error) {
+	url := c.baseURL + "/test-progress/" + refID
+
+	req, err := c.NewRequest("GET", url, nil)
+	if err != nil {
+		return TestProgressResponse{}, err
+	}
+
+	var resp TestProgressResponse
+	if err := c.Do(req, &resp); err != nil {
+		return TestProgressResponse{}, err
+	}
+	return resp, nil
 }
