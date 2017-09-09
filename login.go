@@ -36,6 +36,11 @@ var commandLogin = cli.Command{
 			Usage:  "Logs into an influxdb server.",
 			Action: actionLogin(CollectorInfluxDB),
 		},
+		cli.Command{
+			Name:   "cloud",
+			Usage:  "Logs into the Load Impact cloud service.",
+			Action: actionLogin(CollectorCloud),
+		},
 	},
 }
 

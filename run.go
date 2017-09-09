@@ -298,7 +298,7 @@ func collectorOfType(t string) lib.Collector {
 	case CollectorJSON:
 		return &json.Collector{}
 	case CollectorCloud:
-		return &json.Collector{}
+		return &cloud.Collector{}
 	default:
 		return nil
 	}

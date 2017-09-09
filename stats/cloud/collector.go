@@ -22,15 +22,21 @@ package cloud
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
+	null "gopkg.in/guregu/null.v3"
+
 	"github.com/loadimpact/k6/lib"
 	"github.com/loadimpact/k6/stats"
+	"github.com/loadimpact/k6/ui"
 	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 )
@@ -43,6 +49,12 @@ const (
 type loadimpactConfig struct {
 	ProjectId int    `mapstructure:"project_id"`
 	Name      string `mapstructure:"name"`
+}
+
+var _ lib.AuthenticatedCollector = &Collector{}
+
+type Config struct {
+	APIToken null.String `json:"api_token,omitempty"`
 }
 
 // Collector sends result data to the Load Impact cloud service.
@@ -132,7 +144,55 @@ func (c *Collector) Init() error {
 }
 
 func (c *Collector) MakeConfig() interface{} {
-	return nil
+	return &Config{}
+}
+
+func (c *Collector) Login(conf_ interface{}, in io.Reader, out io.Writer) (interface{}, error) {
+	conf := conf_.(*Config)
+
+	form := ui.Form{
+		Fields: []ui.Field{
+			ui.StringField{
+				Key:   "email_or_token",
+				Label: "Email or API token",
+			},
+		},
+	}
+	data, err := form.Run(in, out)
+	if err != nil {
+		return nil, err
+	}
+	emailOrToken := data["email_or_token"].(string)
+	if emailOrToken == "" {
+		return nil, errors.New("Email or API token must be provided to login")
+	}
+	if strings.IndexByte(emailOrToken, '@') >= 0 {
+		form := ui.Form{
+			Fields: []ui.Field{
+				ui.StringField{
+					Key:   "password",
+					Label: "Password",
+				},
+			},
+		}
+		data, err := form.Run(in, out)
+		if err != nil {
+			return nil, err
+		}
+		password := data["password"].(string)
+
+		client := NewClient("", "", "")
+		response, err := client.Login(emailOrToken, password)
+		if err != nil {
+			return nil, err
+		}
+
+		emailOrToken = response.APIToken
+	}
+
+	conf.APIToken = null.StringFrom(emailOrToken)
+
+	return conf, nil
 }
 
 func (c *Collector) String() string {
