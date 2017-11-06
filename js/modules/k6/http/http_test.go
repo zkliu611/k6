@@ -26,6 +26,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/http/cookiejar"
 	"strconv"
 	"strings"
 	"testing"
@@ -37,6 +38,7 @@ import (
 	"github.com/loadimpact/k6/lib/metrics"
 	"github.com/loadimpact/k6/lib/netext"
 	"github.com/loadimpact/k6/stats"
+	"github.com/oxtoacart/bpool"
 	log "github.com/sirupsen/logrus"
 	logtest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -110,32 +112,56 @@ func TestRequest(t *testing.T) {
 				DualStack: true,
 			})).DialContext,
 		},
+		BPool: bpool.NewBufferPool(1),
 	}
 
 	ctx := new(context.Context)
 	*ctx = context.Background()
 	*ctx = common.WithState(*ctx, state)
 	*ctx = common.WithRuntime(*ctx, rt)
-	rt.Set("http", common.Bind(rt, &HTTP{}, ctx))
+	rt.Set("http", common.Bind(rt, New(), ctx))
 
 	t.Run("Redirects", func(t *testing.T) {
-		t.Run("9", func(t *testing.T) {
-			_, err := common.RunString(rt, `http.get("https://httpbin.org/redirect/9")`)
+		t.Run("10", func(t *testing.T) {
+			_, err := common.RunString(rt, `http.get("https://httpbin.org/redirect/10")`)
 			assert.NoError(t, err)
 		})
-		t.Run("10", func(t *testing.T) {
+		t.Run("11", func(t *testing.T) {
 			hook := logtest.NewLocal(state.Logger)
 			defer hook.Reset()
 
-			_, err := common.RunString(rt, `http.get("https://httpbin.org/redirect/10")`)
-			assert.EqualError(t, err, "GoError: Get /get: stopped after 10 redirects")
+			_, err := common.RunString(rt, `
+			let res = http.get("https://httpbin.org/redirect/11");
+			if (res.status != 302) { throw new Error("wrong status: " + res.status) }
+			if (res.url != "https://httpbin.org/relative-redirect/1") { throw new Error("incorrect URL: " + res.url) }
+			if (res.headers["Location"] != "/get") { throw new Error("incorrect Location header: " + res.headers["Location"]) }
+			`)
+			assert.NoError(t, err)
 
 			logEntry := hook.LastEntry()
 			if assert.NotNil(t, logEntry) {
 				assert.Equal(t, log.WarnLevel, logEntry.Level)
-				assert.EqualError(t, logEntry.Data["error"].(error), "Get /get: stopped after 10 redirects")
-				assert.Equal(t, "Request Failed", logEntry.Message)
+				assert.Equal(t, "Possible redirect loop, 302 response returned last, 10 redirects followed; pass { redirects: n } in request params to silence this", logEntry.Data["error"])
+				assert.Equal(t, "https://httpbin.org/redirect/11", logEntry.Data["url"])
+				assert.Equal(t, "Redirect Limit", logEntry.Message)
 			}
+		})
+		t.Run("requestScopeRedirects", func(t *testing.T) {
+			_, err := common.RunString(rt, `
+			let res = http.get("https://httpbin.org/redirect/1", {redirects: 3});
+			if (res.status != 200) { throw new Error("wrong status: " + res.status) }
+			if (res.url != "https://httpbin.org/get") { throw new Error("incorrect URL: " + res.url) }
+			`)
+			assert.NoError(t, err)
+		})
+		t.Run("requestScopeNoRedirects", func(t *testing.T) {
+			_, err := common.RunString(rt, `
+			let res = http.get("https://httpbin.org/redirect/1", {redirects: 0});
+			if (res.status != 302) { throw new Error("wrong status: " + res.status) }
+			if (res.url != "https://httpbin.org/redirect/1") { throw new Error("incorrect URL: " + res.url) }
+			if (res.headers["Location"] != "/get") { throw new Error("incorrect Location header: " + res.headers["Location"]) }
+			`)
+			assert.NoError(t, err)
 		})
 	})
 	t.Run("Timeout", func(t *testing.T) {
@@ -190,10 +216,6 @@ func TestRequest(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	})
-	t.Run("BadSSL", func(t *testing.T) {
-		_, err := common.RunString(rt, `http.get("https://expired.badssl.com/");`)
-		assert.EqualError(t, err, "GoError: Get https://expired.badssl.com/: x509: certificate has expired or is not yet valid")
-	})
 	t.Run("Cancelled", func(t *testing.T) {
 		hook := logtest.NewLocal(state.Logger)
 		defer hook.Reset()
@@ -245,6 +267,13 @@ func TestRequest(t *testing.T) {
 				`)
 				assert.NoError(t, err)
 			})
+
+			t.Run("url", func(t *testing.T) {
+				_, err := common.RunString(rt, `
+				if (res.html().url != "https://httpbin.org/html") { throw new Error("url incorrect: " + res.html().url); }
+				`)
+				assert.NoError(t, err)
+			})
 		})
 
 		t.Run("group", func(t *testing.T) {
@@ -279,6 +308,54 @@ func TestRequest(t *testing.T) {
 		t.Run("Invalid", func(t *testing.T) {
 			_, err := common.RunString(rt, `http.request("GET", "https://httpbin.org/html").json();`)
 			assert.EqualError(t, err, "GoError: invalid character '<' looking for beginning of value")
+		})
+	})
+	t.Run("TLS", func(t *testing.T) {
+		t.Run("cert_expired", func(t *testing.T) {
+			_, err := common.RunString(rt, `http.get("https://expired.badssl.com/");`)
+			assert.EqualError(t, err, "GoError: Get https://expired.badssl.com/: x509: certificate has expired or is not yet valid")
+		})
+		tlsVersionTests := []struct {
+			Name, URL, Version string
+		}{
+			{Name: "tls10", URL: "https://tls-v1-0.badssl.com:1010/", Version: "http.TLS_1_0"},
+			{Name: "tls11", URL: "https://tls-v1-1.badssl.com:1011/", Version: "http.TLS_1_1"},
+			{Name: "tls12", URL: "https://badssl.com/", Version: "http.TLS_1_2"},
+		}
+		for _, versionTest := range tlsVersionTests {
+			t.Run(versionTest.Name, func(t *testing.T) {
+				_, err := common.RunString(rt, fmt.Sprintf(`
+					let res = http.get("%s");
+					if (res.tls_version != %s) { throw new Error("wrong TLS version: " + res.tls_version); }
+				`, versionTest.URL, versionTest.Version))
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", versionTest.URL, "", 200, "")
+			})
+		}
+		tlsCipherSuiteTests := []struct {
+			Name, URL, CipherSuite string
+		}{
+			{Name: "cipher_suite_cbc", URL: "https://cbc.badssl.com/", CipherSuite: "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"},
+			{Name: "cipher_suite_ecc384", URL: "https://ecc384.badssl.com/", CipherSuite: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"},
+		}
+		for _, cipherSuiteTest := range tlsCipherSuiteTests {
+			t.Run(cipherSuiteTest.Name, func(t *testing.T) {
+				_, err := common.RunString(rt, fmt.Sprintf(`
+					let res = http.get("%s");
+					if (res.tls_cipher_suite != "%s") { throw new Error("wrong TLS cipher suite: " + res.tls_cipher_suite); }
+				`, cipherSuiteTest.URL, cipherSuiteTest.CipherSuite))
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", cipherSuiteTest.URL, "", 200, "")
+			})
+		}
+		t.Run("ocsp_stapled_good", func(t *testing.T) {
+			state.Samples = nil
+			_, err := common.RunString(rt, `
+			let res = http.request("GET", "https://stackoverflow.com/");
+			if (res.ocsp.status != http.OCSP_STATUS_GOOD) { throw new Error("wrong ocsp stapled response status: " + res.ocsp.status); }
+			`)
+			assert.NoError(t, err)
+			assertRequestMetricsEmitted(t, state.Samples, "GET", "https://stackoverflow.com/", "", 200, "")
 		})
 	})
 	t.Run("Invalid", func(t *testing.T) {
@@ -330,6 +407,197 @@ func TestRequest(t *testing.T) {
 				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/headers", "", 200, "")
 			})
 		}
+
+		t.Run("cookies", func(t *testing.T) {
+			t.Run("access", func(t *testing.T) {
+				cookieJar, err := cookiejar.New(nil)
+				assert.NoError(t, err)
+				state.CookieJar = cookieJar
+				state.Samples = nil
+				_, err = common.RunString(rt, `
+				let res = http.request("GET", "https://httpbin.org/cookies/set?key=value", null, { redirects: 0 });
+				if (res.cookies.key[0].value != "value") { throw new Error("wrong cookie value: " + res.cookies.key[0].value); }
+				if (res.cookies.key[0].path != "/") { throw new Error("wrong cookie value: " + res.cookies.key[0].path); }
+				`)
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/cookies/set?key=value", "", 302, "")
+			})
+
+			t.Run("vuJar", func(t *testing.T) {
+				cookieJar, err := cookiejar.New(nil)
+				assert.NoError(t, err)
+				state.CookieJar = cookieJar
+				state.Samples = nil
+				_, err = common.RunString(rt, `
+				let jar = http.cookieJar();
+				jar.set("https://httpbin.org/cookies", "key", "value");
+				let res = http.request("GET", "https://httpbin.org/cookies", null, { cookies: { key2: "value2" } });
+				if (res.json().cookies.key != "value") { throw new Error("wrong cookie value: " + res.json().cookies.key); }
+				if (res.json().cookies.key2 != "value2") { throw new Error("wrong cookie value: " + res.json().cookies.key2); }
+				let jarCookies = jar.cookiesForURL("https://httpbin.org/cookies");
+				if (jarCookies.key[0] != "value") { throw new Error("wrong cookie value in jar"); }
+				if (jarCookies.key2 != undefined) { throw new Error("unexpected cookie in jar"); }
+				`)
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/cookies", "", 200, "")
+			})
+
+			t.Run("requestScope", func(t *testing.T) {
+				cookieJar, err := cookiejar.New(nil)
+				assert.NoError(t, err)
+				state.CookieJar = cookieJar
+				state.Samples = nil
+				_, err = common.RunString(rt, `
+				let res = http.request("GET", "https://httpbin.org/cookies", null, { cookies: { key: "value" } });
+				if (res.json().cookies.key != "value") { throw new Error("wrong cookie value: " + res.json().cookies.key); }
+				let jar = http.cookieJar();
+				let jarCookies = jar.cookiesForURL("https://httpbin.org/cookies");
+				if (jarCookies.key != undefined) { throw new Error("unexpected cookie in jar"); }
+				`)
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/cookies", "", 200, "")
+			})
+
+			t.Run("requestScopeReplace", func(t *testing.T) {
+				cookieJar, err := cookiejar.New(nil)
+				assert.NoError(t, err)
+				state.CookieJar = cookieJar
+				state.Samples = nil
+				_, err = common.RunString(rt, `
+				let jar = http.cookieJar();
+				jar.set("https://httpbin.org/cookies", "key", "value");
+				let res = http.request("GET", "https://httpbin.org/cookies", null, { cookies: { key: { value: "replaced", replace: true } } });
+				if (res.json().cookies.key != "replaced") { throw new Error("wrong cookie value: " + res.json().cookies.key); }
+				let jarCookies = jar.cookiesForURL("https://httpbin.org/cookies");
+				if (jarCookies.key[0] != "value") { throw new Error("wrong cookie value in jar"); }
+				`)
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/cookies", "", 200, "")
+			})
+
+			t.Run("redirect", func(t *testing.T) {
+				cookieJar, err := cookiejar.New(nil)
+				assert.NoError(t, err)
+				state.CookieJar = cookieJar
+				state.Samples = nil
+				_, err = common.RunString(rt, `
+				http.cookieJar().set("https://httpbin.org/cookies", "key", "value");
+				let res = http.request("GET", "https://httpbin.org/cookies/set?key2=value2");
+				if (res.json().cookies.key != "value") { throw new Error("wrong cookie value: " + res.body); }
+				if (res.json().cookies.key2 != "value2") { throw new Error("wrong cookie value 2: " + res.body); }
+				`)
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/cookies", "https://httpbin.org/cookies/set?key2=value2", 200, "")
+			})
+
+			t.Run("domain", func(t *testing.T) {
+				cookieJar, err := cookiejar.New(nil)
+				assert.NoError(t, err)
+				state.CookieJar = cookieJar
+				state.Samples = nil
+				_, err = common.RunString(rt, `
+				let jar = http.cookieJar();
+				jar.set("https://httpbin.org/cookies", "key", "value", { domain: "httpbin.org" });
+				let res = http.request("GET", "https://httpbin.org/cookies");
+				if (res.json().cookies.key != "value") {
+					throw new Error("wrong cookie value: " + res.json().cookies.key);
+				}
+				jar.set("https://httpbin.org/cookies", "key2", "value2", { domain: "example.com" });
+				res = http.request("GET", "http://httpbin.org/cookies");
+				if (res.json().cookies.key != "value") {
+					throw new Error("wrong cookie value: " + res.json().cookies.key);
+				}
+				if (res.json().cookies.key2 != undefined) {
+					throw new Error("cookie 'key2' unexpectedly found");
+				}
+				`)
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/cookies", "", 200, "")
+			})
+
+			t.Run("path", func(t *testing.T) {
+				cookieJar, err := cookiejar.New(nil)
+				assert.NoError(t, err)
+				state.CookieJar = cookieJar
+				state.Samples = nil
+				_, err = common.RunString(rt, `
+				let jar = http.cookieJar();
+				jar.set("https://httpbin.org/cookies", "key", "value", { path: "/cookies" });
+				let res = http.request("GET", "https://httpbin.org/cookies");
+				if (res.json().cookies.key != "value") {
+					throw new Error("wrong cookie value: " + res.json().cookies.key);
+				}
+				jar.set("https://httpbin.org/cookies", "key2", "value2", { path: "/some-other-path" });
+				res = http.request("GET", "http://httpbin.org/cookies");
+				if (res.json().cookies.key != "value") {
+					throw new Error("wrong cookie value: " + res.json().cookies.key);
+				}
+				if (res.json().cookies.key2 != undefined) {
+					throw new Error("cookie 'key2' unexpectedly found");
+				}
+				`)
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/cookies", "", 200, "")
+			})
+
+			t.Run("expires", func(t *testing.T) {
+				cookieJar, err := cookiejar.New(nil)
+				assert.NoError(t, err)
+				state.CookieJar = cookieJar
+				state.Samples = nil
+				_, err = common.RunString(rt, `
+				let jar = http.cookieJar();
+				jar.set("https://httpbin.org/cookies", "key", "value", { expires: "Sun, 24 Jul 1983 17:01:02 GMT" });
+				let res = http.request("GET", "https://httpbin.org/cookies");
+				if (res.json().cookies.key != undefined) {
+					throw new Error("cookie 'key' unexpectedly found");
+				}
+				jar.set("https://httpbin.org/cookies", "key", "value", { expires: "Sat, 24 Jul 2083 17:01:02 GMT" });
+				res = http.request("GET", "https://httpbin.org/cookies");
+				if (res.json().cookies.key != "value") {
+					throw new Error("cookie 'key' not found");
+				}
+				`)
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/cookies", "", 200, "")
+			})
+
+			t.Run("secure", func(t *testing.T) {
+				cookieJar, err := cookiejar.New(nil)
+				assert.NoError(t, err)
+				state.CookieJar = cookieJar
+				state.Samples = nil
+				_, err = common.RunString(rt, `
+				let jar = http.cookieJar();
+				jar.set("https://httpbin.org/cookies", "key", "value", { secure: true });
+				let res = http.request("GET", "https://httpbin.org/cookies");
+				if (res.json().cookies.key != "value") {
+					throw new Error("wrong cookie value: " + res.json().cookies.key);
+				}
+				`)
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/cookies", "", 200, "")
+			})
+
+			t.Run("localJar", func(t *testing.T) {
+				cookieJar, err := cookiejar.New(nil)
+				assert.NoError(t, err)
+				state.CookieJar = cookieJar
+				state.Samples = nil
+				_, err = common.RunString(rt, `
+				let jar = new http.CookieJar();
+				jar.set("https://httpbin.org/cookies", "key", "value");
+				let res = http.request("GET", "https://httpbin.org/cookies", null, { cookies: { key2: "value2" }, jar: jar });
+				if (res.json().cookies.key != "value") { throw new Error("wrong cookie value: " + res.json().cookies.key); }
+				if (res.json().cookies.key2 != "value2") { throw new Error("wrong cookie value: " + res.json().cookies.key2); }
+				let jarCookies = jar.cookiesForURL("https://httpbin.org/cookies");
+				if (jarCookies.key[0] != "value") { throw new Error("wrong cookie value in jar: " + jarCookies.key[0]); }
+				if (jarCookies.key2 != undefined) { throw new Error("unexpected cookie in jar"); }
+				`)
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/cookies", "", 200, "")
+			})
+		})
 
 		t.Run("headers", func(t *testing.T) {
 			for _, literal := range []string{`null`, `undefined`} {
@@ -474,7 +742,7 @@ func TestRequest(t *testing.T) {
 			_, err := common.RunString(rt, `
 			let reqs = [
 				["GET", "https://httpbin.org/"],
-				["GET", "https://example.com/"],
+				["GET", "https://now.httpbin.org/"],
 			];
 			let res = http.batch(reqs);
 			for (var key in res) {
@@ -483,7 +751,7 @@ func TestRequest(t *testing.T) {
 			}`)
 			assert.NoError(t, err)
 			assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/", "", 200, "")
-			assertRequestMetricsEmitted(t, state.Samples, "GET", "https://example.com/", "", 200, "")
+			assertRequestMetricsEmitted(t, state.Samples, "GET", "https://now.httpbin.org/", "", 200, "")
 
 			t.Run("Tagged", func(t *testing.T) {
 				state.Samples = nil
@@ -491,7 +759,7 @@ func TestRequest(t *testing.T) {
 				let fragment = "get";
 				let reqs = [
 					["GET", http.url`+"`"+`https://httpbin.org/${fragment}`+"`"+`],
-					["GET", http.url`+"`"+`https://example.com/`+"`"+`],
+					["GET", http.url`+"`"+`https://now.httpbin.org/`+"`"+`],
 				];
 				let res = http.batch(reqs);
 				for (var key in res) {
@@ -500,7 +768,7 @@ func TestRequest(t *testing.T) {
 				}`)
 				assert.NoError(t, err)
 				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/get", "https://httpbin.org/${}", 200, "")
-				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://example.com/", "", 200, "")
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://now.httpbin.org/", "", 200, "")
 			})
 
 			t.Run("Shorthand", func(t *testing.T) {
@@ -508,7 +776,7 @@ func TestRequest(t *testing.T) {
 				_, err := common.RunString(rt, `
 				let reqs = [
 					"https://httpbin.org/",
-					"https://example.com/",
+					"https://now.httpbin.org/",
 				];
 				let res = http.batch(reqs);
 				for (var key in res) {
@@ -517,7 +785,7 @@ func TestRequest(t *testing.T) {
 				}`)
 				assert.NoError(t, err)
 				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/", "", 200, "")
-				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://example.com/", "", 200, "")
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://now.httpbin.org/", "", 200, "")
 
 				t.Run("Tagged", func(t *testing.T) {
 					state.Samples = nil
@@ -525,7 +793,7 @@ func TestRequest(t *testing.T) {
 					let fragment = "get";
 					let reqs = [
 						http.url`+"`"+`https://httpbin.org/${fragment}`+"`"+`,
-						http.url`+"`"+`https://example.com/`+"`"+`,
+						http.url`+"`"+`https://now.httpbin.org/`+"`"+`,
 					];
 					let res = http.batch(reqs);
 					for (var key in res) {
@@ -534,8 +802,25 @@ func TestRequest(t *testing.T) {
 					}`)
 					assert.NoError(t, err)
 					assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/get", "https://httpbin.org/${}", 200, "")
-					assertRequestMetricsEmitted(t, state.Samples, "GET", "https://example.com/", "", 200, "")
+					assertRequestMetricsEmitted(t, state.Samples, "GET", "https://now.httpbin.org/", "", 200, "")
 				})
+			})
+
+			t.Run("ObjectForm", func(t *testing.T) {
+				state.Samples = nil
+				_, err := common.RunString(rt, `
+				let reqs = [
+					{ url: "https://httpbin.org/", method: "GET" },
+					{ method: "GET", url: "https://now.httpbin.org/" },
+				];
+				let res = http.batch(reqs);
+				for (var key in res) {
+					if (res[key].status != 200) { throw new Error("wrong status: " + res[key].status); }
+					if (res[key].url != reqs[key].url) { throw new Error("wrong url: " + res[key].url); }
+				}`)
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://httpbin.org/", "", 200, "")
+				assertRequestMetricsEmitted(t, state.Samples, "GET", "https://now.httpbin.org/", "", 200, "")
 			})
 		})
 		t.Run("POST", func(t *testing.T) {
@@ -566,14 +851,14 @@ func TestRequest(t *testing.T) {
 func TestTagURL(t *testing.T) {
 	rt := goja.New()
 	rt.SetFieldNameMapper(common.FieldNameMapper{})
-	rt.Set("http", common.Bind(rt, &HTTP{}, nil))
+	rt.Set("http", common.Bind(rt, New(), nil))
 
 	testdata := map[string]URLTag{
-		`http://example.com/`:               {URL: "http://example.com/", Name: "http://example.com/"},
-		`http://example.com/${1+1}`:         {URL: "http://example.com/2", Name: "http://example.com/${}"},
-		`http://example.com/${1+1}/`:        {URL: "http://example.com/2/", Name: "http://example.com/${}/"},
-		`http://example.com/${1+1}/${1+2}`:  {URL: "http://example.com/2/3", Name: "http://example.com/${}/${}"},
-		`http://example.com/${1+1}/${1+2}/`: {URL: "http://example.com/2/3/", Name: "http://example.com/${}/${}/"},
+		`http://httpbin.org/anything/`:               {URL: "http://httpbin.org/anything/", Name: "http://httpbin.org/anything/"},
+		`http://httpbin.org/anything/${1+1}`:         {URL: "http://httpbin.org/anything/2", Name: "http://httpbin.org/anything/${}"},
+		`http://httpbin.org/anything/${1+1}/`:        {URL: "http://httpbin.org/anything/2/", Name: "http://httpbin.org/anything/${}/"},
+		`http://httpbin.org/anything/${1+1}/${1+2}`:  {URL: "http://httpbin.org/anything/2/3", Name: "http://httpbin.org/anything/${}/${}"},
+		`http://httpbin.org/anything/${1+1}/${1+2}/`: {URL: "http://httpbin.org/anything/2/3/", Name: "http://httpbin.org/anything/${}/${}/"},
 	}
 	for expr, tag := range testdata {
 		t.Run("expr="+expr, func(t *testing.T) {

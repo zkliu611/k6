@@ -25,6 +25,7 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
+	"net/http/cookiejar"
 	"time"
 
 	"github.com/dop251/goja"
@@ -33,6 +34,7 @@ import (
 	"github.com/loadimpact/k6/lib/metrics"
 	"github.com/loadimpact/k6/lib/netext"
 	"github.com/loadimpact/k6/stats"
+	"github.com/oxtoacart/bpool"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/viki-org/dnscache"
@@ -112,6 +114,20 @@ func (r *Runner) newVU() (*VU, error) {
 		tlsVersion = *r.Bundle.Options.TLSVersion
 	}
 
+	tlsAuth := r.Bundle.Options.TLSAuth
+	certs := make([]tls.Certificate, len(tlsAuth))
+	nameToCert := make(map[string]*tls.Certificate)
+	for i, auth := range tlsAuth {
+		for _, name := range auth.Domains {
+			cert, err := auth.Certificate()
+			if err != nil {
+				return nil, err
+			}
+			certs[i] = *cert
+			nameToCert[name] = &certs[i]
+		}
+	}
+
 	dialer := &netext.Dialer{Dialer: r.BaseDialer, Resolver: r.Resolver}
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -120,6 +136,8 @@ func (r *Runner) newVU() (*VU, error) {
 			CipherSuites:       cipherSuites,
 			MinVersion:         uint16(tlsVersion.Min),
 			MaxVersion:         uint16(tlsVersion.Max),
+			Certificates:       certs,
+			NameToCertificate:  nameToCert,
 		},
 		DialContext: dialer.DialContext,
 	}
@@ -131,6 +149,7 @@ func (r *Runner) newVU() (*VU, error) {
 		HTTPTransport:  transport,
 		Dialer:         dialer,
 		Console:        NewConsole(),
+		BPool:          bpool.NewBufferPool(100),
 	}
 	vu.Runtime.Set("console", common.Bind(vu.Runtime, vu.Console, vu.Context))
 
@@ -164,15 +183,23 @@ type VU struct {
 	Iteration     int64
 
 	Console *Console
+	BPool   *bpool.BufferPool
 }
 
 func (u *VU) RunOnce(ctx context.Context) ([]stats.Sample, error) {
+	cookieJar, err := cookiejar.New(nil)
+	if err != nil {
+		return nil, err
+	}
+
 	state := &common.State{
 		Logger:        u.Runner.Logger,
 		Options:       u.Runner.Bundle.Options,
 		Group:         u.Runner.defaultGroup,
 		HTTPTransport: u.HTTPTransport,
 		Dialer:        u.Dialer,
+		CookieJar:     cookieJar,
+		BPool:         u.BPool,
 	}
 	u.Dialer.BytesRead = &state.BytesRead
 	u.Dialer.BytesWritten = &state.BytesWritten
@@ -184,7 +211,7 @@ func (u *VU) RunOnce(ctx context.Context) ([]stats.Sample, error) {
 	u.Runtime.Set("__ITER", u.Iteration)
 	u.Iteration++
 
-	_, err := u.Default(goja.Undefined())
+	_, err = u.Default(goja.Undefined())
 
 	t := time.Now()
 	samples := append(state.Samples,

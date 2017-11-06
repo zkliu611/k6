@@ -23,7 +23,7 @@ package cloud
 import (
 	"context"
 	"fmt"
-	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -40,30 +40,29 @@ const (
 
 // Collector sends result data to the Load Impact cloud service.
 type Collector struct {
+	config      Config
 	referenceID string
-	initErr     error // Possible error from init call to cloud API
-
-	name       string
-	project_id int
 
 	duration   int64
 	thresholds map[string][]*stats.Threshold
 	client     *cloud.Client
+
+	anonymous bool
 
 	sampleBuffer []*cloud.Sample
 	sampleMu     sync.Mutex
 }
 
 // New creates a new cloud collector
-func New(fname string, src *lib.SourceData, opts lib.Options, version string) (*Collector, error) {
-	token := os.Getenv("K6CLOUD_TOKEN")
-
-	var extConfig cloud.LoadImpactConfig
+func New(conf Config, src *lib.SourceData, opts lib.Options, version string) (*Collector, error) {
 	if val, ok := opts.External["loadimpact"]; ok {
-		err := mapstructure.Decode(val, &extConfig)
-		if err != nil {
-			log.Warn("Malformed loadimpact settings in script options")
+		if err := mapstructure.Decode(val, &conf); err != nil {
+			return nil, err
 		}
+	}
+
+	if conf.Name == "" {
+		conf.Name = filepath.Base(src.Filename)
 	}
 
 	thresholds := make(map[string][]*stats.Threshold)
@@ -79,11 +78,16 @@ func New(fname string, src *lib.SourceData, opts lib.Options, version string) (*
 		duration = int64(time.Duration(opts.Duration.Duration).Seconds())
 	}
 
+	if conf.Token == "" && conf.DeprecatedToken != "" {
+		log.Warn("K6CLOUD_TOKEN is deprecated and will be removed. Use K6_CLOUD_TOKEN instead.")
+		conf.Token = conf.DeprecatedToken
+	}
+
 	return &Collector{
-		name:       extConfig.GetName(src),
-		project_id: extConfig.GetProjectId(),
+		config:     conf,
 		thresholds: thresholds,
-		client:     cloud.NewClient(token, "", version),
+		client:     cloud.NewClient(conf.Token, conf.Host, version),
+		anonymous:  conf.Token == "",
 		duration:   duration,
 	}, nil
 }
@@ -98,46 +102,34 @@ func (c *Collector) Init() error {
 	}
 
 	testRun := &cloud.TestRun{
-		Name:       c.name,
+		Name:       c.config.Name,
+		ProjectID:  c.config.ProjectID,
 		Thresholds: thresholds,
 		Duration:   c.duration,
-		ProjectID:  c.project_id,
 	}
 
 	response, err := c.client.CreateTestRun(testRun)
 
 	if err != nil {
-		c.initErr = err
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Cloud collector failed to init")
-		return nil
+		return err
 	}
 	c.referenceID = response.ReferenceID
 
 	log.WithFields(log.Fields{
-		"name":        c.name,
-		"projectId":   c.project_id,
+		"name":        c.config.Name,
+		"projectId":   c.config.ProjectID,
 		"duration":    c.duration,
 		"referenceId": c.referenceID,
-	}).Debug("Cloud collector init successful")
+	}).Debug("Cloud: Initialized")
 	return nil
 }
 
-func (c *Collector) MakeConfig() interface{} {
-	return nil
-}
-
-func (c *Collector) String() string {
-	if c.initErr == nil {
-		return fmt.Sprintf("Load Impact (https://app.loadimpact.com/k6/runs/%s)", c.referenceID)
+func (c *Collector) Link() string {
+	path := "runs"
+	if c.config.Token == "" {
+		path = "anonymous"
 	}
-
-	switch c.initErr {
-	case cloud.ErrNotAuthorized:
-		return c.initErr.Error()
-	}
-	return fmt.Sprintf("Failed to create test in Load Impact cloud")
+	return fmt.Sprintf("https://app.loadimpact.com/k6/%s/%s", path, c.referenceID)
 }
 
 func (c *Collector) Run(ctx context.Context) {

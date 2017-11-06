@@ -41,6 +41,9 @@ type Executor interface {
 	SetLogger(l *log.Logger)
 	GetLogger() *log.Logger
 
+	GetStages() []Stage
+	SetStages(s []Stage)
+
 	GetIterations() int64
 	GetEndIterations() null.Int
 	SetEndIterations(i null.Int)

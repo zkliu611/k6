@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/loadimpact/k6/lib"
+	"github.com/loadimpact/k6/lib/metrics"
 	"github.com/loadimpact/k6/stats"
 	logtest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -50,6 +51,41 @@ func TestExecutorSetLogger(t *testing.T) {
 	e := New(nil)
 	e.SetLogger(logger)
 	assert.Equal(t, logger, e.GetLogger())
+}
+
+func TestExecutorStages(t *testing.T) {
+	testdata := map[string]struct {
+		Duration time.Duration
+		Stages   []lib.Stage
+	}{
+		"one": {
+			1 * time.Second,
+			[]lib.Stage{{Duration: lib.NullDurationFrom(1 * time.Second)}},
+		},
+		"two": {
+			2 * time.Second,
+			[]lib.Stage{
+				{Duration: lib.NullDurationFrom(1 * time.Second)},
+				{Duration: lib.NullDurationFrom(1 * time.Second)},
+			},
+		},
+		"two/targeted": {
+			2 * time.Second,
+			[]lib.Stage{
+				{Duration: lib.NullDurationFrom(1 * time.Second), Target: null.IntFrom(5)},
+				{Duration: lib.NullDurationFrom(1 * time.Second), Target: null.IntFrom(10)},
+			},
+		},
+	}
+	for name, data := range testdata {
+		t.Run(name, func(t *testing.T) {
+			e := New(nil)
+			assert.NoError(t, e.SetVUsMax(10))
+			e.SetStages(data.Stages)
+			assert.NoError(t, e.Run(context.Background(), nil))
+			assert.True(t, e.GetTime() >= data.Duration)
+		})
+	}
 }
 
 func TestExecutorEndTime(t *testing.T) {
@@ -88,7 +124,11 @@ func TestExecutorEndIterations(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		samples := <-samples
-		assert.Equal(t, []stats.Sample{{Metric: metric, Value: 1.0}}, samples)
+		if assert.Len(t, samples, 2) {
+			assert.Equal(t, stats.Sample{Metric: metric, Value: 1.0}, samples[0])
+			assert.Equal(t, metrics.Iterations, samples[1].Metric)
+			assert.Equal(t, float64(1), samples[1].Value)
+		}
 	}
 }
 
@@ -161,7 +201,9 @@ func TestExecutorSetVUs(t *testing.T) {
 			num := 0
 			for i, handle := range e.vus {
 				num++
-				assert.NotNil(t, handle.vu, "vu %d lacks impl", i)
+				if assert.NotNil(t, handle.vu, "vu %d lacks impl", i) {
+					assert.Equal(t, int64(0), handle.vu.(*lib.RunnerFuncVU).ID)
+				}
 				assert.Nil(t, handle.ctx, "vu %d has ctx", i)
 				assert.Nil(t, handle.cancel, "vu %d has cancel", i)
 			}
@@ -175,9 +217,11 @@ func TestExecutorSetVUs(t *testing.T) {
 			for i, handle := range e.vus {
 				if i < 50 {
 					assert.NotNil(t, handle.cancel, "vu %d lacks cancel", i)
+					assert.Equal(t, int64(i+1), handle.vu.(*lib.RunnerFuncVU).ID)
 					num++
 				} else {
 					assert.Nil(t, handle.cancel, "vu %d has cancel", i)
+					assert.Equal(t, int64(0), handle.vu.(*lib.RunnerFuncVU).ID)
 				}
 			}
 			assert.Equal(t, 50, num)
@@ -189,6 +233,7 @@ func TestExecutorSetVUs(t *testing.T) {
 			num := 0
 			for i, handle := range e.vus {
 				assert.NotNil(t, handle.cancel, "vu %d lacks cancel", i)
+				assert.Equal(t, int64(i+1), handle.vu.(*lib.RunnerFuncVU).ID)
 				num++
 			}
 			assert.Equal(t, 100, num)
@@ -206,9 +251,25 @@ func TestExecutorSetVUs(t *testing.T) {
 					} else {
 						assert.Nil(t, handle.cancel, "vu %d has cancel", i)
 					}
+					assert.Equal(t, int64(i+1), handle.vu.(*lib.RunnerFuncVU).ID)
 				}
 				assert.Equal(t, 50, num)
 			}
+
+			t.Run("Raise", func(t *testing.T) {
+				assert.NoError(t, e.SetVUs(100))
+				assert.Equal(t, int64(100), e.GetVUs())
+				if assert.Len(t, e.vus, 100) {
+					for i, handle := range e.vus {
+						assert.NotNil(t, handle.cancel, "vu %d lacks cancel", i)
+						if i < 50 {
+							assert.Equal(t, int64(i+1), handle.vu.(*lib.RunnerFuncVU).ID)
+						} else {
+							assert.Equal(t, int64(50+i+1), handle.vu.(*lib.RunnerFuncVU).ID)
+						}
+					}
+				}
+			})
 		})
 	})
 }

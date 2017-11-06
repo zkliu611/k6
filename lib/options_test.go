@@ -22,9 +22,13 @@ package lib
 
 import (
 	"crypto/tls"
+	"encoding/json"
+	"os"
+	"reflect"
 	"testing"
 	"time"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/loadimpact/k6/stats"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/guregu/null.v3"
@@ -96,6 +100,66 @@ func TestOptionsApply(t *testing.T) {
 		assert.Equal(t, opts.TLSVersion.Min, tls.VersionSSL30)
 		assert.Equal(t, opts.TLSVersion.Max, tls.VersionTLS12)
 	})
+	t.Run("TLSAuth", func(t *testing.T) {
+		tlsAuth := []*TLSAuth{
+			{TLSAuthFields{
+				Domains: []string{"example.com", "*.example.com"},
+				Cert: "-----BEGIN CERTIFICATE-----\n" +
+					"MIIBoTCCAUegAwIBAgIUQl0J1Gkd6U2NIMwMDnpfH8c1myEwCgYIKoZIzj0EAwIw\n" +
+					"EDEOMAwGA1UEAxMFTXkgQ0EwHhcNMTcwODE1MTYxODAwWhcNMTgwODE1MTYxODAw\n" +
+					"WjAQMQ4wDAYDVQQDEwV1c2VyMTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABLaf\n" +
+					"xEOmBHkzbqd9/0VZX/39qO2yQq2Gz5faRdvy38kuLMCV+9HYrfMx6GYCZzTUIq6h\n" +
+					"8QXOrlgYTixuUVfhJNWjfzB9MA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUEFjAUBggr\n" +
+					"BgEFBQcDAQYIKwYBBQUHAwIwDAYDVR0TAQH/BAIwADAdBgNVHQ4EFgQUxmQiq5K3\n" +
+					"KUnVME945Byt3Ysvkh8wHwYDVR0jBBgwFoAU3qEhcpRgpsqo9V+LFns9a+oZIYww\n" +
+					"CgYIKoZIzj0EAwIDSAAwRQIgSGxnJ+/cLUNTzt7fhr/mjJn7ShsTW33dAdfLM7H2\n" +
+					"z/gCIQDyVf8DePtxlkMBScTxZmIlMQdNc6+6VGZQ4QscruVLmg==\n" +
+					"-----END CERTIFICATE-----",
+				Key: "-----BEGIN EC PRIVATE KEY-----\n" +
+					"MHcCAQEEIAfJeoc+XgcqmYV0b4owmofx0LXwPRqOPXMO+PUKxZSgoAoGCCqGSM49\n" +
+					"AwEHoUQDQgAEtp/EQ6YEeTNup33/RVlf/f2o7bJCrYbPl9pF2/LfyS4swJX70dit\n" +
+					"8zHoZgJnNNQirqHxBc6uWBhOLG5RV+Ek1Q==\n" +
+					"-----END EC PRIVATE KEY-----",
+			}, nil},
+			{TLSAuthFields{
+				Domains: []string{"sub.example.com"},
+				Cert: "-----BEGIN CERTIFICATE-----\n" +
+					"MIIBojCCAUegAwIBAgIUWMpVQhmGoLUDd2x6XQYoOOV6C9AwCgYIKoZIzj0EAwIw\n" +
+					"EDEOMAwGA1UEAxMFTXkgQ0EwHhcNMTcwODE1MTYxODAwWhcNMTgwODE1MTYxODAw\n" +
+					"WjAQMQ4wDAYDVQQDEwV1c2VyMTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABBfF\n" +
+					"85gu8fDbNGNlsrtnO+4HvuiP4IXA041jjGczD5kUQ8aihS7hg81tSrLNd1jgxkkv\n" +
+					"Po+3TQjzniysiunG3iKjfzB9MA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUEFjAUBggr\n" +
+					"BgEFBQcDAQYIKwYBBQUHAwIwDAYDVR0TAQH/BAIwADAdBgNVHQ4EFgQUU0JfPCQb\n" +
+					"2YpQZV4j1yiRXBa7J64wHwYDVR0jBBgwFoAU3qEhcpRgpsqo9V+LFns9a+oZIYww\n" +
+					"CgYIKoZIzj0EAwIDSQAwRgIhANYDaM18sXAdkjybHccH8xTbBWUNpOYvoHhrGW32\n" +
+					"Ov9JAiEA7QKGpm07tQl8p+t7UsOgZu132dHNZUtfgp1bjWfcapU=\n" +
+					"-----END CERTIFICATE-----",
+				Key: "-----BEGIN EC PRIVATE KEY-----\n" +
+					"MHcCAQEEINVilD5qOBkSy+AYfd41X0QPB5N3Z6OzgoBj8FZmSJOFoAoGCCqGSM49\n" +
+					"AwEHoUQDQgAEF8XzmC7x8Ns0Y2Wyu2c77ge+6I/ghcDTjWOMZzMPmRRDxqKFLuGD\n" +
+					"zW1Kss13WODGSS8+j7dNCPOeLKyK6cbeIg==\n" +
+					"-----END EC PRIVATE KEY-----",
+			}, nil},
+		}
+		opts := Options{}.Apply(Options{TLSAuth: tlsAuth})
+		assert.Equal(t, tlsAuth, opts.TLSAuth)
+
+		t.Run("Roundtrip", func(t *testing.T) {
+			optsData, err := json.Marshal(opts)
+			assert.NoError(t, err)
+
+			var opts2 Options
+			assert.NoError(t, json.Unmarshal(optsData, &opts2))
+			if assert.Len(t, opts2.TLSAuth, len(opts.TLSAuth)) {
+				for i := 0; i < len(opts2.TLSAuth); i++ {
+					assert.Equal(t, opts.TLSAuth[i].TLSAuthFields, opts2.TLSAuth[i].TLSAuthFields)
+					cert, err := opts2.TLSAuth[i].Certificate()
+					assert.NoError(t, err)
+					assert.NotNil(t, cert)
+				}
+			}
+		})
+	})
 	t.Run("NoConnectionReuse", func(t *testing.T) {
 		opts := Options{}.Apply(Options{NoConnectionReuse: null.BoolFrom(true)})
 		assert.True(t, opts.NoConnectionReuse.Valid)
@@ -119,4 +183,84 @@ func TestOptionsApply(t *testing.T) {
 		assert.True(t, opts.NoUsageReport.Valid)
 		assert.True(t, opts.NoUsageReport.Bool)
 	})
+}
+
+func TestOptionsEnv(t *testing.T) {
+	testdata := map[struct{ Name, Key string }]map[string]interface{}{
+		{"Paused", "K6_PAUSED"}: {
+			"":      null.Bool{},
+			"true":  null.BoolFrom(true),
+			"false": null.BoolFrom(false),
+		},
+		{"VUs", "K6_VUS"}: {
+			"":    null.Int{},
+			"123": null.IntFrom(123),
+		},
+		{"VUsMax", "K6_VUS_MAX"}: {
+			"":    null.Int{},
+			"123": null.IntFrom(123),
+		},
+		{"Duration", "K6_DURATION"}: {
+			"":    NullDuration{},
+			"10s": NullDurationFrom(10 * time.Second),
+		},
+		{"Iterations", "K6_ITERATIONS"}: {
+			"":    null.Int{},
+			"123": null.IntFrom(123),
+		},
+		{"Stages", "K6_STAGES"}: {
+			// "": []Stage{},
+			"1s": []Stage{{
+				Duration: NullDurationFrom(1 * time.Second)},
+			},
+			"1s:100": []Stage{
+				{Duration: NullDurationFrom(1 * time.Second), Target: null.IntFrom(100)},
+			},
+			"1s,2s:100": []Stage{
+				{Duration: NullDurationFrom(1 * time.Second)},
+				{Duration: NullDurationFrom(2 * time.Second), Target: null.IntFrom(100)},
+			},
+		},
+		{"MaxRedirects", "K6_MAX_REDIRECTS"}: {
+			"":    null.Int{},
+			"123": null.IntFrom(123),
+		},
+		{"InsecureSkipTLSVerify", "K6_INSECURE_SKIP_TLS_VERIFY"}: {
+			"":      null.Bool{},
+			"true":  null.BoolFrom(true),
+			"false": null.BoolFrom(false),
+		},
+		// TLSCipherSuites
+		// TLSVersion
+		// TLSAuth
+		{"NoConnectionReuse", "K6_NO_CONNECTION_REUSE"}: {
+			"":      null.Bool{},
+			"true":  null.BoolFrom(true),
+			"false": null.BoolFrom(false),
+		},
+		{"UserAgent", "K6_USER_AGENT"}: {
+			"":    null.String{},
+			"Hi!": null.StringFrom("Hi!"),
+		},
+		{"Throw", "K6_THROW"}: {
+			"":      null.Bool{},
+			"true":  null.BoolFrom(true),
+			"false": null.BoolFrom(false),
+		},
+		// Thresholds
+		// External
+	}
+	for field, data := range testdata {
+		os.Clearenv()
+		t.Run(field.Name, func(t *testing.T) {
+			for str, val := range data {
+				t.Run(`"`+str+`"`, func(t *testing.T) {
+					assert.NoError(t, os.Setenv(field.Key, str))
+					var opts Options
+					assert.NoError(t, envconfig.Process("k6", &opts))
+					assert.Equal(t, val, reflect.ValueOf(opts).FieldByName(field.Name).Interface())
+				})
+			}
+		})
+	}
 }
