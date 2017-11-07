@@ -127,6 +127,13 @@ func (e *Executor) GetLogger() *log.Logger {
 	return e.Logger
 }
 
+func (e *Executor) GetStages() []lib.Stage {
+	return nil
+}
+
+func (e *Executor) SetStages(s []lib.Stage) {
+}
+
 func (e *Executor) GetIterations() int64 {
 	return 0
 }

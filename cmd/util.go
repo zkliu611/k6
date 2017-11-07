@@ -23,6 +23,7 @@ package cmd
 import (
 	"bytes"
 	"io"
+	"os"
 	"sync"
 
 	"github.com/loadimpact/k6/lib"
@@ -58,6 +59,13 @@ func (w consoleWriter) Write(p []byte) (n int, err error) {
 	n, err = w.Writer.Write(p)
 	w.Mutex.Unlock()
 	return
+}
+
+func env(key, def string) string {
+	if v, ok := os.LookupEnv(key); ok {
+		return v
+	}
+	return def
 }
 
 func getNullBool(flags *pflag.FlagSet, key string) null.Bool {

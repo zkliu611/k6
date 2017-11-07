@@ -38,7 +38,6 @@ import (
 
 	"github.com/loadimpact/k6/api"
 	"github.com/loadimpact/k6/core"
-	"github.com/loadimpact/k6/core/local"
 	"github.com/loadimpact/k6/js"
 	"github.com/loadimpact/k6/lib"
 	"github.com/loadimpact/k6/loader"
@@ -51,15 +50,22 @@ import (
 )
 
 const (
+	typeAuto    = "auto"
 	typeJS      = "js"
 	typeArchive = "archive"
 
 	collectorInfluxDB = "influxdb"
 	collectorJSON     = "json"
 	collectorCloud    = "cloud"
+
+	execLocal = "local"
+	execCloud = "cloud"
 )
 
-var runType = os.Getenv("K6_TYPE")
+var (
+	runType = env("K6_TYPE", typeAuto)
+	runExec = env("K6_EXEC", execLocal)
+)
 
 // runCmd represents the run command.
 var runCmd = &cobra.Command{
@@ -112,6 +118,12 @@ a commandline interface for interacting with it.`,
 			return err
 		}
 
+		// Create an executor, wrapping the runner.
+		ex, err := newExecutor(runExec, r, src)
+		if err != nil {
+			return err
+		}
+
 		// Assemble options; start with the CLI-provided options to get shadowed (non-Valid)
 		// defaults in there, override with Runner-provided ones, then merge the CLI opts in
 		// on top to give them priority.
@@ -152,9 +164,9 @@ a commandline interface for interacting with it.`,
 		// Write options back to the runner too.
 		r.ApplyOptions(opts)
 
-		// Create an engine with a local executor, wrapping the Runner.
+		// Create an engine.
 		fmt.Fprintf(stdout, "%s   engine\r", initBar.String())
-		engine, err := core.NewEngine(local.New(r), opts)
+		engine, err := core.NewEngine(ex, opts)
 		if err != nil {
 			return err
 		}
@@ -376,6 +388,7 @@ func init() {
 	runCmd.Flags().AddFlagSet(optionFlagSet)
 	runCmd.Flags().AddFlagSet(configFlagSet)
 	runCmd.Flags().StringVarP(&runType, "type", "t", runType, "override file `type`, \"js\" or \"archive\"")
+	runCmd.Flags().StringVarP(&runExec, "exec", "x", runExec, "specify `where` to run the test, \"local\" or \"cloud\"")
 }
 
 // Reads a source file from any supported destination.
@@ -397,7 +410,7 @@ func readSource(src, pwd string, fs afero.Fs, stdin io.Reader) (*lib.SourceData,
 // Creates a new runner.
 func newRunner(src *lib.SourceData, typ string, fs afero.Fs) (lib.Runner, error) {
 	switch typ {
-	case "":
+	case "", typeAuto:
 		return newRunner(src, detectType(src.Data), fs)
 	case typeJS:
 		return js.New(src, fs)
