@@ -350,7 +350,7 @@ a commandline interface for interacting with it.`,
 			fmt.Fprintf(stdout, "\n")
 			ui.Summarize(stdout, "", ui.SummaryData{
 				Opts:    opts,
-				Root:    engine.Executor.GetRunner().GetDefaultGroup(),
+				Root:    engine.Executor.GetRootGroup(),
 				Metrics: engine.Metrics,
 				Time:    engine.Executor.GetTime(),
 			})
