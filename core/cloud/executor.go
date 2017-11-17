@@ -22,7 +22,7 @@ package cloud
 
 import (
 	"context"
-	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -45,24 +45,28 @@ type Executor struct {
 	running bool
 }
 
-func New(r lib.Runner, src *lib.SourceData, version string) *Executor {
-	token := os.Getenv("K6CLOUD_TOKEN")
-	opts := r.GetOptions()
-
-	var extConfig LoadImpactConfig
+func New(conf Config, r lib.Runner, src *lib.SourceData, opts lib.Options, version string) (*Executor, error) {
 	if val, ok := opts.External["loadimpact"]; ok {
-		err := mapstructure.Decode(val, &extConfig)
-		if err != nil {
+		if err := mapstructure.Decode(val, &conf); err != nil {
 			log.Warn("Malformed loadimpact settings in script options")
 		}
 	}
 
+	if conf.Name == "" {
+		conf.Name = filepath.Base(src.Filename)
+	}
+
+	if conf.Token == "" && conf.DeprecatedToken != "" {
+		log.Warn("K6CLOUD_TOKEN is deprecated and will be removed. Use K6_CLOUD_TOKEN instead.")
+		conf.Token = conf.DeprecatedToken
+	}
+
 	return &Executor{
 		Logger:  log.StandardLogger(),
-		Client:  NewClient(token, "", version),
+		Client:  NewClient(conf.Token, conf.Host, version),
 		Archive: r.MakeArchive(),
-		Name:    extConfig.GetName(src),
-	}
+		Name:    conf.Name,
+	}, nil
 }
 
 func (e *Executor) Init() error {

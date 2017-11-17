@@ -27,12 +27,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strconv"
 	"time"
 
-	"github.com/loadimpact/k6/lib"
 	"github.com/pkg/errors"
 )
 
@@ -44,42 +40,6 @@ const (
 	// Retry attempts
 	MaxRetries = 3
 )
-
-type LoadImpactConfig struct {
-	ProjectId int    `mapstructure:"project_id"`
-	Name      string `mapstructure:"name"`
-}
-
-func (cfg LoadImpactConfig) GetProjectId() int {
-	env := os.Getenv("K6CLOUD_PROJECTID")
-	if env != "" {
-		id, err := strconv.Atoi(env)
-		if err == nil && id > 0 {
-			return id
-		}
-	}
-	return cfg.ProjectId
-}
-
-func (cfg LoadImpactConfig) GetName(src *lib.SourceData) string {
-	envName := os.Getenv("K6CLOUD_NAME")
-	if envName != "" {
-		return envName
-	}
-
-	if cfg.Name != "" {
-		return cfg.Name
-	}
-
-	if src.Filename != "" && src.Filename != "-" {
-		name := filepath.Base(src.Filename)
-		if name != "" && name != "." {
-			return name
-		}
-	}
-
-	return "k6 test"
-}
 
 // Client handles communication with Load Impact cloud API.
 type Client struct {
@@ -96,7 +56,7 @@ func NewClient(token, host, version string) *Client {
 	if host == "" {
 		host = "https://ingest.loadimpact.com"
 	}
-	c := &Client{
+	return &Client{
 		client:        &http.Client{Timeout: RequestTimeout},
 		token:         token,
 		baseURL:       fmt.Sprintf("%s/v1", host),
@@ -104,7 +64,6 @@ func NewClient(token, host, version string) *Client {
 		retries:       MaxRetries,
 		retryInterval: RetryInterval,
 	}
-	return c
 }
 
 func (c *Client) NewRequest(method, url string, data interface{}) (*http.Request, error) {

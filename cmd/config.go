@@ -24,8 +24,8 @@ import (
 	"encoding/json"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/loadimpact/k6/core/cloud"
 	"github.com/loadimpact/k6/lib"
-	"github.com/loadimpact/k6/stats/cloud"
 	"github.com/loadimpact/k6/stats/influxdb"
 	"github.com/shibukawa/configdir"
 	"github.com/spf13/pflag"

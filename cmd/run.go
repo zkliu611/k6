@@ -118,12 +118,6 @@ a commandline interface for interacting with it.`,
 			return err
 		}
 
-		// Create an executor, wrapping the runner.
-		ex, err := newExecutor(runExec, r, src)
-		if err != nil {
-			return err
-		}
-
 		// Assemble options; start with the CLI-provided options to get shadowed (non-Valid)
 		// defaults in there, override with Runner-provided ones, then merge the CLI opts in
 		// on top to give them priority.
@@ -161,8 +155,15 @@ a commandline interface for interacting with it.`,
 			opts.Duration = lib.NullDuration{}
 		}
 
-		// Write options back to the runner too.
+		// Write options back to the config + runner too.
+		conf.Options = opts
 		r.ApplyOptions(opts)
+
+		// Create an executor, wrapping the runner.
+		ex, err := newExecutor(runExec, r, src, conf)
+		if err != nil {
+			return err
+		}
 
 		// Create an engine.
 		fmt.Fprintf(stdout, "%s   engine\r", initBar.String())

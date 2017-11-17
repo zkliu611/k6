@@ -40,7 +40,7 @@ const (
 
 // Collector sends result data to the Load Impact cloud service.
 type Collector struct {
-	config      Config
+	config      cloud.Config
 	referenceID string
 
 	duration   int64
@@ -54,7 +54,7 @@ type Collector struct {
 }
 
 // New creates a new cloud collector
-func New(conf Config, src *lib.SourceData, opts lib.Options, version string) (*Collector, error) {
+func New(conf cloud.Config, src *lib.SourceData, opts lib.Options, version string) (*Collector, error) {
 	if val, ok := opts.External["loadimpact"]; ok {
 		if err := mapstructure.Decode(val, &conf); err != nil {
 			return nil, err
