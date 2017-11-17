@@ -63,10 +63,14 @@ func (h *vuHandle) run(logger *log.Logger, flow <-chan int64, out chan<- []stats
 		if h.vu != nil {
 			s, err := h.vu.RunOnce(ctx)
 			if err != nil {
-				if s, ok := err.(fmt.Stringer); ok {
-					logger.Error(s.String())
-				} else {
-					logger.Error(err.Error())
+				select {
+				case <-ctx.Done():
+				default:
+					if s, ok := err.(fmt.Stringer); ok {
+						logger.Error(s.String())
+					} else {
+						logger.Error(err.Error())
+					}
 				}
 			}
 			samples = s
@@ -180,7 +184,8 @@ func (e *Executor) Run(parent context.Context, out chan<- []stats.Sample) error 
 		}
 	}()
 
-	if err := e.scale(ctx, lib.Max(0, atomic.LoadInt64(&e.numVUs))); err != nil {
+	startVUs := atomic.LoadInt64(&e.numVUs)
+	if err := e.scale(ctx, lib.Max(0, startVUs)); err != nil {
 		return err
 	}
 
@@ -238,7 +243,7 @@ func (e *Executor) Run(parent context.Context, out chan<- []stats.Sample) error 
 
 			stages := e.stages
 			if stages != nil {
-				vus, keepRunning := ProcessStages(stages, at)
+				vus, keepRunning := ProcessStages(startVUs, stages, at)
 				if !keepRunning {
 					e.Logger.WithField("at", at).Debug("Local: Ran out of stages")
 					cutoff = time.Now()
