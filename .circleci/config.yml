@@ -20,10 +20,15 @@ jobs:
           name: Run linter
           command: |
             export PATH=$GOPATH/bin:$PATH
-            go get -t ./...
+            go get -t ./...gdg
             go get -u github.com/alecthomas/gometalinter
             gometalinter --install
             gometalinter --deadline 10m --config gometalinter.json --vendor ./...
+      - run:
+          name: Run vendor check
+          command: |
+            go get github.com/FiloSottile/vendorcheck
+            vendorcheck -t ./...
       - run:
           name: Run tests and code coverage
           command: |
