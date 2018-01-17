@@ -27,7 +27,7 @@ jobs:
       - run:
           name: Run vendor check
           command: |
-            go get github.com/FiloSottile/vendorcheck
+            go get -u github.com/FiloSottile/vendorcheck
             vendorcheck -t ./...
       - run:
           name: Run tests and code coverage
