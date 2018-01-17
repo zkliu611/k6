@@ -20,7 +20,7 @@ jobs:
           name: Run linter
           command: |
             export PATH=$GOPATH/bin:$PATH
-            go get -t ./...gdg
+            go get -t ./...
             go get -u github.com/alecthomas/gometalinter
             gometalinter --install
             gometalinter --deadline 10m --config gometalinter.json --vendor ./...
