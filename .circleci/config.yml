@@ -59,7 +59,11 @@ jobs:
             rm -f *.coverage
             bash <(curl -s https://codecov.io/bash)
   docker-build-test-deploy:
+    docker:
+      - image: circleci/golang:latest
     steps:
+      - setup_remote_docker:
+            version: 17.07.0-ce
       - run:
           name: Build application Docker image
           command: |
