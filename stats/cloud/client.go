@@ -123,6 +123,11 @@ func (c *Client) do(req *http.Request, v interface{}, attempt int) (retry bool, 
 		req.Header.Set("Authorization", fmt.Sprintf("Token %s", c.token))
 	}
 	req.Header.Set("User-Agent", "k6cloud/"+c.version)
+	//dump, err := httputil.DumpRequestOut(req, false)
+	//if err != nil {
+	//return false, err
+	//}
+	//log.Warn(fmt.Printf("%s\n\n", dump))
 
 	resp, err := c.client.Do(req)
 

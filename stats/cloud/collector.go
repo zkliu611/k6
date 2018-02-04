@@ -23,6 +23,7 @@ package cloud
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -155,18 +156,62 @@ func (c *Collector) Collect(samples []stats.Sample) {
 	}
 
 	var cloudSamples []*Sample
+	var httpJSON *Sample
+	var iterationJSON *Sample
 	for _, samp := range samples {
-		sampleJSON := &Sample{
-			Type:   "Point",
-			Metric: samp.Metric.Name,
-			Data: SampleData{
-				Type:  samp.Metric.Type,
-				Time:  samp.Time,
-				Value: samp.Value,
-				Tags:  samp.Tags,
-			},
+
+		name := samp.Metric.Name
+		//log.Warn(name)
+		if name == "http_reqs" {
+			httpJSON = &Sample{
+				Type:   "Points",
+				Metric: "http_req_li_all",
+				Data: SampleData{
+					Type:   samp.Metric.Type,
+					Time:   samp.Time,
+					Tags:   samp.Tags,
+					Values: make(map[string]float64),
+				},
+			}
+			httpJSON.Data.Values[name] = samp.Value
+			cloudSamples = append(cloudSamples, httpJSON)
+		} else if name == "data_sent" {
+			//log.Warn(name)
+			iterationJSON = &Sample{
+				Type:   "Points",
+				Metric: "iter_li_all",
+				Data: SampleData{
+					Type:   samp.Metric.Type,
+					Time:   samp.Time,
+					Tags:   samp.Tags,
+					Values: make(map[string]float64),
+				},
+			}
+			iterationJSON.Data.Values[name] = samp.Value
+			cloudSamples = append(cloudSamples, iterationJSON)
+		} else if name == "data_received" || name == "iter_duration" {
+			//log.Warn(name)
+			iterationJSON.Data.Values[name] = samp.Value
+		} else if strings.HasPrefix(name, "http_req_") {
+			httpJSON.Data.Values[name] = samp.Value
+			//if name == "http_req_tls_handshaking" {
+			//log.WithFields(log.Fields{
+			//"httpJSON": httpJSON,
+			//}).Warn("------------------")
+			//}
+		} else {
+			sampleJSON := &Sample{
+				Type:   "Point",
+				Metric: name,
+				Data: SampleData{
+					Type:  samp.Metric.Type,
+					Time:  samp.Time,
+					Value: samp.Value,
+					Tags:  samp.Tags,
+				},
+			}
+			cloudSamples = append(cloudSamples, sampleJSON)
 		}
-		cloudSamples = append(cloudSamples, sampleJSON)
 	}
 
 	if len(cloudSamples) > 0 {
