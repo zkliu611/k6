@@ -98,6 +98,9 @@ func TestRequestAndBatch(t *testing.T) {
 	httpbinSrv := httptest.NewServer(httpbin.NewHTTPBin().Handler())
 	defer httpbinSrv.Close()
 
+	ntlmServer := newNTLMServer("bob", "pass")
+	defer ntlmServer.Close()
+
 	root, err := lib.NewGroup("", nil)
 	assert.NoError(t, err)
 
@@ -623,6 +626,17 @@ func TestRequestAndBatch(t *testing.T) {
 				`, url))
 				assert.NoError(t, err)
 				assertRequestMetricsEmitted(t, state.Samples, "GET", fmt.Sprintf("http://127.0.0.1:%s/digest-auth/auth/bob/pass", srvUrl.Port()), url, 200, "")
+			})
+			t.Run("ntlm", func(t *testing.T) {
+				state.Samples = nil
+				url := strings.Replace(ntlmServer.URL, "http://", "http://bob:pass@", -1)
+
+				_, err := common.RunString(rt, fmt.Sprintf(`
+				let res = http.request("GET", "%s", null, { auth: "ntlm" });
+				if (res.status != 200) { throw new Error("wrong status: " + res.status); }
+				`, url))
+				assert.NoError(t, err)
+				assertRequestMetricsEmitted(t, state.Samples, "GET", url, url, 200, "")
 			})
 		})
 

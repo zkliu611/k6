@@ -75,6 +75,24 @@ export default function() {
 
 **Docs**: [HTTP Params](http://k6.readme.io/docs/params-k6http)
 
+### k6/http: Support for NTLM Authentication (#533)
+
+```js
+import http from "k6/http";
+import { check } from "k6";
+
+export default function() {
+    let res = http.get("http://user:passwd@example.org/", {auth: "ntlm"});
+
+    // Verify response
+    check(res, {
+        "status is 200": (r) => r.status === 200
+    });
+}
+```
+
+**Docs**: [HTTP Params](http://k6.readme.io/docs/params-k6http)
+
 ### Lifecycle: setup/teardown functions (#457)
 Finally k6 has the same basic test lifecycle hooks as many "normal" testing tools, setup and teardown, and you have the full JS API of k6 available within these functions which means you can make HTTP calls etc. that you can’t do in the global/init scope.
 
