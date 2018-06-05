@@ -17,13 +17,22 @@ jobs:
             docker info
             echo "{\"https://index.docker.io/v1/\":{\"auth\":\"$DOCKER_AUTH\",\"email\":\"$DOCKER_EMAIL\"}}" >~/.dockercfg
       - run:
-          name: Install Docker Compose
+          name: Build linux packages
           command: |
-            # curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m`
-            curl -L https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m) -o ~/docker-compose
-            chmod +x ~/docker-compose
-            sudo mv ~/docker-compose /usr/local/bin/docker-compose
-            docker-compose version
+            curl https://glide.sh/get | sh
+            go get github.com/mh-cbon/go-bin-deb \
+              && cd /go/src/github.com/mh-cbon/go-bin-deb \
+              && glide install \
+              && go install
+
+            go get github.com/mh-cbon/go-bin-rpm \
+              && cd /go/src/github.com/mh-cbon/go-bin-rpm \
+              && glide install \
+              && go install
+
+            apt-get update -y && apt-get install -y fakeroot rpm
+
+            VERSION=0.21.0 packaging/gen-packages.sh deb
 
       # - run:
       #     name: Run linter
