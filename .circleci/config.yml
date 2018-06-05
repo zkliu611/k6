@@ -35,7 +35,8 @@ jobs:
             sudo apt-get update -y
             sudo apt-get install -y fakeroot rpm
 
-            VERSION=0.21.0 packaging/gen-packages.sh deb
+            ls -l
+            VERSION=0.21.0 ./packaging/gen-packages.sh deb
 
       # - run:
       #     name: Run linter
@@ -68,10 +69,10 @@ jobs:
           command: |
             docker build -t loadimpact/k6 .
 
-      - run:
-          name: Build linux packages
-          command: |
-            docker-compose run --rm -e VERSION=0.21.0 -e ARCH=amd64 deb
+      # - run:
+      #     name: Build linux packages
+      #     command: |
+      #       docker-compose run --rm -e VERSION=0.21.0 -e ARCH=amd64 deb
       # - run:
       #     name: Run tests on generated Docker image
       #     command: |
