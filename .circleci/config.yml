@@ -19,7 +19,6 @@ jobs:
       - run:
           name: Build linux packages
           command: |
-            # make -p $GOPATH/bin
             export PATH=$GOPATH/bin:$PATH
             go get github.com/Masterminds/glide
             go get github.com/mh-cbon/go-bin-deb \
@@ -36,9 +35,8 @@ jobs:
             sudo apt-get install -y fakeroot rpm
 
             cd $GOPATH/src/github.com/loadimpact/k6
-            ls -l
-            export VERSION=0.21.0
-            ./packaging/gen-packages.sh deb
+
+            VERSION=0.21.0 ARCH=amd64 ./packaging/gen-packages.sh deb
 
       # - run:
       #     name: Run linter
