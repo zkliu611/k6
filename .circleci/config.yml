@@ -22,6 +22,12 @@ jobs:
             curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
             chmod +x ~/docker-compose
             sudo mv ~/docker-compose /usr/local/bin/docker-compose
+      - run:
+          name: Build linux packages
+          command: |
+            CGO_ENABLED=0 go build -a -ldflags '-s -w' -o dist/k6-amd64
+            docker-compose run --rm -v 'dist/k6-amd64:/tmp/k6' -e VERSION=0.21.0 -e ARCH=amd64 deb
+            # docker-compose run --rm rpm
       # - run:
       #     name: Run linter
       #     command: |
