@@ -14,4 +14,5 @@ echo "Done!"
 VERSION=0.21.0
 ARCH=amd64
 
+mkdir -p dist
 VERBOSE=* go-bin-$1 generate --file packaging/$1.json -a $ARCH --version $VERSION -o dist/k6-v$VERSION-$ARCH.deb
