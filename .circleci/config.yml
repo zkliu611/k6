@@ -20,18 +20,20 @@ jobs:
           name: Build linux packages
           command: |
             # make -p $GOPATH/bin
+            export PATH=$GOPATH/bin:$PATH
             go get github.com/Masterminds/glide
             go get github.com/mh-cbon/go-bin-deb \
-              && cd /go/src/github.com/mh-cbon/go-bin-deb \
+              && cd $GOPATH/src/github.com/mh-cbon/go-bin-deb \
               && glide install \
               && go install
 
             go get github.com/mh-cbon/go-bin-rpm \
-              && cd /go/src/github.com/mh-cbon/go-bin-rpm \
+              && cd $GOPATHsrc/github.com/mh-cbon/go-bin-rpm \
               && glide install \
               && go install
 
-            apt-get update -y && apt-get install -y fakeroot rpm
+            sudo apt-get update -y
+            sudo apt-get install -y fakeroot rpm
 
             VERSION=0.21.0 packaging/gen-packages.sh deb
 
