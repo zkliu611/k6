@@ -9,7 +9,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-            version: 17.07.0-ce
+            version: 18.03.1-ce
       - run:
           name: setup repo and docker
           command: |
@@ -17,47 +17,53 @@ jobs:
             docker info
             echo "{\"https://index.docker.io/v1/\":{\"auth\":\"$DOCKER_AUTH\",\"email\":\"$DOCKER_EMAIL\"}}" >~/.dockercfg
       - run:
-          name: Run linter
+          name: Install Docker Compose
           command: |
-            export PATH=$GOPATH/bin:$PATH
-            go get -t ./...
-            go get -u github.com/alecthomas/gometalinter
-            gometalinter --install
-            gometalinter --deadline 10m --config gometalinter.json --vendor ./...
-      - run:
-          name: Check dependencies
-          command: |
-            export PATH=$GOPATH/bin:$PATH
-            go get -u github.com/golang/dep/cmd/dep
-            dep status
-            dep ensure -update -dry-run
-      - run:
-          name: Run tests and code coverage
-          command: |
-            export PATH=$GOPATH/bin:$PATH
-            echo "mode: set" > coverage.txt
-            for pkg in $(go list ./... | grep -v vendor); do
-                go test -race -timeout 210s -coverprofile=$(echo $pkg | tr / -).coverage $pkg
-            done
-            grep -h -v "^mode:" *.coverage >> coverage.txt
-            rm -f *.coverage
-            bash <(curl -s https://codecov.io/bash)
+            curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
+            chmod +x ~/docker-compose
+            sudo mv ~/docker-compose /usr/local/bin/docker-compose
+      # - run:
+      #     name: Run linter
+      #     command: |
+      #       export PATH=$GOPATH/bin:$PATH
+      #       go get -t ./...
+      #       go get -u github.com/alecthomas/gometalinter
+      #       gometalinter --install
+      #       gometalinter --deadline 10m --config gometalinter.json --vendor ./...
+      # - run:
+      #     name: Check dependencies
+      #     command: |
+      #       export PATH=$GOPATH/bin:$PATH
+      #       go get -u github.com/golang/dep/cmd/dep
+      #       dep status
+      #       dep ensure -update -dry-run
+      # - run:
+      #     name: Run tests and code coverage
+      #     command: |
+      #       export PATH=$GOPATH/bin:$PATH
+      #       echo "mode: set" > coverage.txt
+      #       for pkg in $(go list ./... | grep -v vendor); do
+      #           go test -race -timeout 210s -coverprofile=$(echo $pkg | tr / -).coverage $pkg
+      #       done
+      #       grep -h -v "^mode:" *.coverage >> coverage.txt
+      #       rm -f *.coverage
+      #       bash <(curl -s https://codecov.io/bash)
       - run:
           name: Build application Docker image
           command: |
             docker build -t loadimpact/k6 .
-      - run:
-          name: Run tests on generated Docker image
-          command: |
-            docker run loadimpact/k6 --help
-            docker run loadimpact/k6 help
-            docker run loadimpact/k6 run --help
-            docker run loadimpact/k6 inspect --help
-            docker run loadimpact/k6 status --help
-            docker run loadimpact/k6 stats --help
-            docker run loadimpact/k6 scale --help
-            docker run loadimpact/k6 pause --help
-            docker run loadimpact/k6 resume --help
+      # - run:
+      #     name: Run tests on generated Docker image
+      #     command: |
+      #       docker run loadimpact/k6 --help
+      #       docker run loadimpact/k6 help
+      #       docker run loadimpact/k6 run --help
+      #       docker run loadimpact/k6 inspect --help
+      #       docker run loadimpact/k6 status --help
+      #       docker run loadimpact/k6 stats --help
+      #       docker run loadimpact/k6 scale --help
+      #       docker run loadimpact/k6 pause --help
+      #       docker run loadimpact/k6 resume --help
       - deploy:
           name: Push application Docker image
           command: |
