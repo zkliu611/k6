@@ -2,7 +2,7 @@
     "name": "k6",
     "maintainer": "Load Impact AB",
     "description": "Load testing for the 21st century",
-    "changelog-cmd": "cat './release notes/v!version!.md'",
+    "changelog-cmd": "ls & cat './release notes/v!version!.md'",
     "homepage": "https://k6.io/",
     "files": [
       {
