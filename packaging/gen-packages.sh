@@ -8,7 +8,7 @@ fi
 
 rm -rf pkg-build
 
-echo "Building k6..."
+echo "Building k6... for v: $VERSION and ${VERSION}"
 CGO_ENABLED=0 GOARCH=$ARCH go build -a -ldflags '-s -w' -o /tmp/k6
 echo "Done!"
 
