@@ -37,7 +37,8 @@ jobs:
 
             cd $GOPATH/src/github.com/loadimpact/k6
             ls -l
-            VERSION=0.21.0 ./packaging/gen-packages.sh deb
+            export VERSION=0.21.0
+            ./packaging/gen-packages.sh deb
 
       # - run:
       #     name: Run linter
