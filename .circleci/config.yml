@@ -19,6 +19,7 @@ jobs:
       - run:
           name: Build linux packages
           command: |
+            make -p $GOPATH/bin
             curl https://glide.sh/get | sh
             go get github.com/mh-cbon/go-bin-deb \
               && cd /go/src/github.com/mh-cbon/go-bin-deb \
