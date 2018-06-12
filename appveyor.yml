@@ -27,8 +27,7 @@ build_script:
   - candle.exe k6.wxs
   - light.exe -ext WixUIExtension k6.wixobj
 
-
 # configure the artifacts to upload to the github releae page
 artifacts:
-  - path: 'k6.msi'
+  - path: 'packaging\k6.msi'
     name: msi-x64
