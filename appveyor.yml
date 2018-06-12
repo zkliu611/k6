@@ -12,7 +12,7 @@ environment:
 install:
   # install required software
   - choco source add -n=mh-cbon -s="https://api.bintray.com/nuget/mh-cbon/choco"
-  - choco install wixtoolset go-msi -y
+  - choco install wixtoolset -y
   - refreshenv
   # ensure wix is available in PATH
   - set PATH=%WIX%\bin;%PATH%
@@ -22,9 +22,10 @@ install:
 # build msi artifacts
 build_script:
   - set GOARCH=amd64
-  - go build -o k6.exe
-  - candle.exe packaging\k6.wxs
-  - light.exe -ext WixUIExtension packaging\k6.wixobj
+  - go build -o packaging\k6.exe
+  - cd packaging
+  - candle.exe k6.wxs
+  - light.exe -ext WixUIExtension k6.wixobj
 
 
 # configure the artifacts to upload to the github releae page
