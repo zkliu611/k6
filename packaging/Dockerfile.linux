@@ -14,6 +14,6 @@ RUN go get github.com/mh-cbon/go-bin-rpm \
   && glide install \
   && go install
 
- RUN apt-get update -y && apt-get install -y fakeroot
+ RUN apt-get update -y && apt-get install -y fakeroot rpm
 
- RUN apt-get install -y rpm
+ COPY ./packaging/gen-packages.sh /gen-packages.sh

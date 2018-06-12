@@ -31,7 +31,7 @@ services:
       context: .
       dockerfile: packaging/Dockerfile.linux
     command:
-      packaging/gen-packages.sh deb
+      /gen-packages.sh deb
     volumes:
       - .:/go/src/github.com/loadimpact/k6
 
@@ -40,6 +40,6 @@ services:
       context: .
       dockerfile: packaging/Dockerfile.linux
     command: >
-      packaging/gen-packages.sh rpm
+      /gen-packages.sh rpm
     volumes:
       - .:/go/src/github.com/loadimpact/k6
