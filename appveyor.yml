@@ -1,7 +1,6 @@
 image: Visual Studio 2017
 clone_folder: c:\gopath\src\github.com\%APPVEYOR_REPO_NAME%
 
-
 # set to false to build on any commit
 skip_non_tags: true
 
