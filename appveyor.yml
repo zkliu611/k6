@@ -1,5 +1,5 @@
 image: Visual Studio 2017
-clone_folder: "c:\gopath\src\github.com\%APPVEYOR_REPO_NAME%"
+clone_folder: 'c:\gopath\src\github.com\%APPVEYOR_REPO_NAME%'
 
 environment:
   # improve readability
