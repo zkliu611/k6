@@ -11,7 +11,7 @@
 
         <!-- Step 1: Define the directory structure -->
         <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="ProgramFilesFolder">
+            <Directory Id="ProgramFiles64Folder">
                 <Directory Id="INSTALLDIR" Name="k6"/>
             </Directory>
         </Directory>

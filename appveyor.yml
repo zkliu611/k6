@@ -27,7 +27,7 @@ build_script:
   - set GOARCH=amd64
   - go build -o packaging\k6.exe
   - cd packaging
-  - candle.exe -dVERSION=%VERSION% k6.wxs
+  - candle.exe -arch x64 -dVERSION=%VERSION% k6.wxs
   - light.exe -ext WixUIExtension k6.wixobj
 
 # configure the artifacts to upload to the github releae page
