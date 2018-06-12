@@ -1,6 +1,9 @@
 version: 2
 jobs:
   build:
+    filters:
+      tags:
+        only: /^v.*/
     docker:
       - image: circleci/golang:latest
     environment:
