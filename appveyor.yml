@@ -6,10 +6,10 @@ skip_non_tags: true
 
 environment:
   # improve readability
-  VCS_URL: https://github.com/%APPVEYOR_REPO_NAME%
-  GH_APP: %APPVEYOR_PROJECT_NAME%
-  GH_USER: %APPVEYOR_ACCOUNT_NAME%
-  VERSION: %APPVEYOR_REPO_TAG_NAME%
+  VCS_URL: 'https://github.com/%APPVEYOR_REPO_NAME%'
+  GH_APP: '%APPVEYOR_PROJECT_NAME%'
+  GH_USER: '%APPVEYOR_ACCOUNT_NAME%'
+  VERSION: '%APPVEYOR_REPO_TAG_NAME%'
   # specific to go
   GOPATH: c:\gopath
 
