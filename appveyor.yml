@@ -15,8 +15,6 @@ environment:
 
 # prepare system and project
 install:
-  # install required software
-  - choco source add -n=mh-cbon -s="https://api.bintray.com/nuget/mh-cbon/choco"
   - choco install wixtoolset -y
   - refreshenv
   # ensure wix is available in PATH
