@@ -1,14 +1,15 @@
 image: Visual Studio 2017
-clone_folder: c:\gopath\src\github.com\%APPVEYOR_REPO_NAME%
+clone_folder: 'c:\gopath\src\github.com\%APPVEYOR_REPO_NAME%'
 
-
-# set to false to build on any commit
-skip_non_tags: true
+branches:
+  only:
+    - /^v\d+\.\d+\.\d+$/
 
 environment:
   # improve readability
   VCS_URL: 'https://github.com/%APPVEYOR_REPO_NAME%'
   # specific to go
+  VERSION: "%APPVEYOR_REPO_TAG_NAME:v=%"
   GOPATH: c:\gopath
 
 
@@ -16,7 +17,7 @@ environment:
 install:
   # install required software
   - choco source add -n=mh-cbon -s="https://api.bintray.com/nuget/mh-cbon/choco"
-  - choco install wixtoolset go-msi -y
+  - choco install wixtoolset -y
   - refreshenv
   # ensure wix is available in PATH
   - set PATH=%WIX%\bin;%PATH%
@@ -26,12 +27,12 @@ install:
 # build msi artifacts
 build_script:
   - set GOARCH=amd64
-  - go build -o k6.exe
-  - candle.exe packaging\k6.wxs
-  - light.exe -ext WixUIExtension packaging\k6.wixobj
-
+  - go build -o packaging\k6.exe
+  - cd packaging
+  - candle.exe -dVERSION=%VERSION% k6.wxs
+  - light.exe -ext WixUIExtension k6.wixobj
 
 # configure the artifacts to upload to the github releae page
 artifacts:
-  - path: 'k6.msi'
+  - path: 'packaging\k6.msi'
     name: msi-x64
