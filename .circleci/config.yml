@@ -109,7 +109,11 @@ workflows:
   version: 2
   test_and_build:
     jobs:
-      - test
+      - test:
+          filters:
+            filters:
+              tags:
+                only: /^v.*/
       - build-packages:
           requires:
             - test
