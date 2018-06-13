@@ -111,12 +111,13 @@ workflows:
     jobs:
       - test:
           filters:
-            filters:
-              tags:
-                only: /^v.*/
+            tags:
+              only: /.*/
       - build-packages:
           requires:
             - test
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /^v.*/
