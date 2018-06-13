@@ -105,7 +105,6 @@ jobs:
 
             VERSION=${CIRCLE_TAG} ARCH=amd64 ./packaging/gen-packages.sh deb
             VERSION=${CIRCLE_TAG} ARCH=amd64 ./packaging/gen-packages.sh rpm
-
 workflows:
   version: 2
   test_and_build:
@@ -116,4 +115,4 @@ workflows:
             - test
           filters:
             tags:
-              ignore: /^v.*/
+              only: /^v.*/
