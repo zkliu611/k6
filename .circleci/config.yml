@@ -130,9 +130,8 @@ jobs:
       - deploy:
           name: Publish packages in Bintray
           command: |
-            curl -fL https://getcli.jfrog.io | sh
             export VERSION=0.1.3
-            ./jfrog bt upload --user $BINTRAY_USER --key $BINTRAY_KEY --override=true --publish=true --deb=stable/main/amd64 dist/k6-v$VERSION-amd64.deb loadimpact/deb/k6/$VERSION pool/k/k6/
+            curl -H "X-GPG-PASSPHRASE: $GPG_PASSPHRASE" -T dist/k6-v$VERSION-amd64.deb "https://$BINTRAY_USER:$BINTRAY_KEY@api.bintray.com/content/loadimpact/deb/k6/$VERSION/k6-v$VERSION-amd64.deb;deb_distribution=stable;deb_component=main;deb_architecture=amd64;publish=1;override=1"
 
 workflows:
   version: 2
