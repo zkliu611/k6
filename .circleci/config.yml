@@ -131,8 +131,10 @@ jobs:
           name: Publish packages in Bintray
           command: |
             export VERSION=0.1.3
+            # Publishing deb
             curl -H "X-GPG-PASSPHRASE: $GPG_PASSPHRASE" -T dist/k6-v$VERSION-amd64.deb "https://$BINTRAY_USER:$BINTRAY_KEY@api.bintray.com/content/loadimpact/deb/k6/$VERSION/k6-v$VERSION-amd64.deb;deb_distribution=stable;deb_component=main;deb_architecture=amd64;publish=1;override=1"
-
+            # Publishing rpm
+            curl -H "X-GPG-PASSPHRASE: $GPG_PASSPHRASE" -T dist/k6-v$VERSION-amd64.rpm "https://$BINTRAY_USER:$BINTRAY_KEY@api.bintray.com/content/loadimpact/rpm/k6/$VERSION/k6-v$VERSION-amd64.rpm?publish=1&override=1"
 workflows:
   version: 2
   test_and_build:
