@@ -9,7 +9,8 @@ environment:
   # improve readability
   VCS_URL: 'https://github.com/%APPVEYOR_REPO_NAME%'
   # specific to go
-  VERSION: "%APPVEYOR_REPO_TAG_NAME:v=%"
+  # VERSION: "%APPVEYOR_REPO_TAG_NAME:v=%"
+  VERSION: 0.99.0
   GOPATH: c:\gopath
   BINTRAY_KEY:
     secure: /0S6SdBwfiuWEdY4SKJcZpxEV+QpsfJfqx3QqYbnK8vwmB2KMGqerGzQRnIrkbGD
