@@ -34,4 +34,4 @@ build_script:
   - cd packaging
   - candle.exe -arch x64 -dVERSION=%VERSION% k6.wxs
   - light.exe -ext WixUIExtension k6.wixobj
-  - curl -H 'X-GPG-PASSPHRASE\: %GPG_PASSPHRASE%' -T packaging\k6.msi "https://%BINTRAY_USER%:%BINTRAY_KEY%@api.bintray.com/content/loadimpact/windows/k6/%VERSION%/k6-v$VERSION-amd64.msi?publish=1&override=1"
+  - 'curl -H "X-GPG-PASSPHRASE: %GPG_PASSPHRASE%" -T packaging\k6.msi "https://%BINTRAY_USER%:%BINTRAY_KEY%@api.bintray.com/content/loadimpact/windows/k6/%VERSION%/k6-v$VERSION-amd64.msi?publish=1&override=1"'
